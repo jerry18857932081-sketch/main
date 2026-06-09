@@ -1,19 +1,1179 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
-const investmentWorkbenchHtml = "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>A股核心受益投资工作台</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        \n        :root {\n            --bg-primary: #0a0e1a;\n            --bg-secondary: #111827;\n            --bg-card: #1a2332;\n            --bg-card-hover: #1f2b3d;\n            --accent-gold: #f59e0b;\n            --accent-blue: #3b82f6;\n            --accent-green: #10b981;\n            --accent-red: #ef4444;\n            --accent-purple: #8b5cf6;\n            --accent-cyan: #06b6d4;\n            --accent-pink: #ec4899;\n            --accent-orange: #f97316;\n            --text-primary: #f1f5f9;\n            --text-secondary: #94a3b8;\n            --text-muted: #64748b;\n            --border-color: #1e293b;\n        }\n\n        body {\n            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;\n            background: var(--bg-primary);\n            color: var(--text-primary);\n            min-height: 100vh;\n            line-height: 1.6;\n        }\n\n        /* Header */\n        .header {\n            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);\n            border-bottom: 1px solid var(--border-color);\n            padding: 24px 0;\n            position: sticky;\n            top: 0;\n            z-index: 100;\n            backdrop-filter: blur(20px);\n        }\n\n        .header-inner {\n            max-width: 1400px;\n            margin: 0 auto;\n            padding: 0 24px;\n        }\n\n        .header h1 {\n            font-size: 28px;\n            font-weight: 700;\n            background: linear-gradient(135deg, #f59e0b, #f97316, #ef4444);\n            -webkit-background-clip: text;\n            -webkit-text-fill-color: transparent;\n            background-clip: text;\n        }\n\n        .header .subtitle {\n            color: var(--text-secondary);\n            font-size: 14px;\n            margin-top: 6px;\n        }\n\n        .strategy-tag {\n            display: inline-block;\n            background: rgba(245, 158, 11, 0.15);\n            color: var(--accent-gold);\n            padding: 4px 12px;\n            border-radius: 20px;\n            font-size: 12px;\n            margin-top: 8px;\n            border: 1px solid rgba(245, 158, 11, 0.3);\n        }\n\n        .dashboard {\n            max-width: 1400px;\n            margin: 24px auto;\n            padding: 0 24px;\n        }\n\n        .dashboard-grid {\n            display: grid;\n            grid-template-columns: 1.1fr 0.9fr;\n            gap: 16px;\n            align-items: stretch;\n        }\n\n        .panel {\n            background: var(--bg-card);\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            padding: 18px;\n            min-width: 0;\n        }\n\n        .panel-title {\n            display: flex;\n            justify-content: space-between;\n            gap: 12px;\n            align-items: center;\n            margin-bottom: 14px;\n        }\n\n        .panel-title h2,\n        .panel-title h3 {\n            font-size: 16px;\n            line-height: 1.3;\n        }\n\n        .panel-note {\n            color: var(--text-muted);\n            font-size: 12px;\n        }\n\n        .metric-grid {\n            display: grid;\n            grid-template-columns: repeat(4, minmax(0, 1fr));\n            gap: 10px;\n        }\n\n        .metric {\n            min-height: 92px;\n            background: rgba(0,0,0,0.2);\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            padding: 12px;\n        }\n\n        .metric-label {\n            color: var(--text-muted);\n            font-size: 12px;\n            margin-bottom: 8px;\n        }\n\n        .metric-value {\n            font-size: 22px;\n            font-weight: 800;\n            line-height: 1.1;\n        }\n\n        .metric-desc {\n            color: var(--text-secondary);\n            font-size: 12px;\n            margin-top: 8px;\n            line-height: 1.45;\n        }\n\n        .tool-row {\n            display: grid;\n            grid-template-columns: 1fr auto auto;\n            gap: 10px;\n            margin-top: 14px;\n        }\n\n        .search-input,\n        .select-input,\n        .text-input {\n            width: 100%;\n            background: #0f172a;\n            color: var(--text-primary);\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            padding: 10px 12px;\n            font-size: 14px;\n            outline: none;\n        }\n\n        .search-input:focus,\n        .select-input:focus,\n        .text-input:focus {\n            border-color: var(--accent-blue);\n        }\n\n        .action-btn {\n            background: rgba(59, 130, 246, 0.16);\n            color: #bfdbfe;\n            border: 1px solid rgba(59, 130, 246, 0.38);\n            border-radius: 8px;\n            padding: 9px 13px;\n            cursor: pointer;\n            font-size: 13px;\n            white-space: nowrap;\n        }\n\n        .action-btn:hover {\n            background: rgba(59, 130, 246, 0.25);\n        }\n\n        .sector-rank {\n            display: flex;\n            flex-direction: column;\n            gap: 10px;\n        }\n\n        .rank-item {\n            display: grid;\n            grid-template-columns: 110px 1fr 48px;\n            gap: 10px;\n            align-items: center;\n            cursor: pointer;\n            padding: 8px;\n            border-radius: 8px;\n            border: 1px solid transparent;\n        }\n\n        .rank-item:hover {\n            background: rgba(255,255,255,0.04);\n            border-color: var(--border-color);\n        }\n\n        .rank-name {\n            font-size: 13px;\n            white-space: nowrap;\n            overflow: hidden;\n            text-overflow: ellipsis;\n        }\n\n        .rank-bar {\n            height: 8px;\n            background: #0f172a;\n            border-radius: 999px;\n            overflow: hidden;\n        }\n\n        .rank-fill {\n            height: 100%;\n            border-radius: 999px;\n        }\n\n        .rank-score {\n            color: var(--text-secondary);\n            font-size: 12px;\n            text-align: right;\n        }\n\n        .workspace-grid {\n            max-width: 1400px;\n            margin: 0 auto 24px;\n            padding: 0 24px;\n            display: grid;\n            grid-template-columns: 1fr 1fr;\n            gap: 16px;\n            min-width: 0;\n        }\n\n        .matrix-wrap {\n            overflow-x: auto;\n            max-width: 100%;\n        }\n\n        .matrix-table {\n            width: 100%;\n            border-collapse: collapse;\n            min-width: 620px;\n        }\n\n        .matrix-table th,\n        .matrix-table td {\n            border-bottom: 1px solid var(--border-color);\n            padding: 10px 8px;\n            text-align: left;\n            font-size: 12px;\n        }\n\n        .matrix-table th {\n            color: var(--text-muted);\n            font-weight: 500;\n        }\n\n        .matrix-table td {\n            color: var(--text-secondary);\n        }\n\n        .score-pill {\n            display: inline-flex;\n            align-items: center;\n            justify-content: center;\n            min-width: 42px;\n            padding: 2px 8px;\n            border-radius: 999px;\n            color: #020617;\n            background: var(--accent-gold);\n            font-weight: 700;\n        }\n\n        .watch-list {\n            display: grid;\n            grid-template-columns: repeat(2, minmax(0, 1fr));\n            gap: 10px;\n            min-height: 88px;\n        }\n\n        .watch-empty {\n            grid-column: 1 / -1;\n            color: var(--text-muted);\n            border: 1px dashed var(--border-color);\n            border-radius: 8px;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            min-height: 88px;\n            font-size: 13px;\n        }\n\n        .watch-card {\n            background: rgba(0,0,0,0.18);\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            padding: 12px;\n        }\n\n        .watch-card strong {\n            display: block;\n            font-size: 14px;\n            margin-bottom: 3px;\n        }\n\n        .watch-card span {\n            color: var(--text-muted);\n            font-size: 12px;\n        }\n\n        .watch-card button {\n            float: right;\n            background: transparent;\n            color: var(--text-muted);\n            border: 0;\n            cursor: pointer;\n            font-size: 16px;\n        }\n\n        .builder-grid {\n            display: grid;\n            grid-template-columns: repeat(2, minmax(0, 1fr));\n            gap: 10px;\n        }\n\n        .builder-result {\n            margin-top: 12px;\n            color: var(--text-secondary);\n            font-size: 13px;\n            line-height: 1.7;\n            background: rgba(0,0,0,0.18);\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            padding: 12px;\n            min-height: 90px;\n        }\n\n        .advanced-grid {\n            grid-template-columns: 1fr 1fr;\n            align-items: start;\n        }\n\n        .panel-stack {\n            display: grid;\n            gap: 16px;\n        }\n\n        .compare-slots {\n            display: grid;\n            grid-template-columns: repeat(3, minmax(0, 1fr));\n            gap: 10px;\n            margin-bottom: 12px;\n        }\n\n        .compare-slot {\n            min-height: 74px;\n            border: 1px dashed var(--border-color);\n            border-radius: 8px;\n            padding: 10px;\n            background: rgba(0,0,0,0.16);\n            color: var(--text-muted);\n            font-size: 12px;\n        }\n\n        .compare-slot.filled {\n            border-style: solid;\n            border-color: rgba(59, 130, 246, 0.42);\n            color: var(--text-secondary);\n        }\n\n        .compare-slot strong {\n            display: block;\n            color: var(--text-primary);\n            font-size: 14px;\n            margin-bottom: 4px;\n        }\n\n        .compare-slot button,\n        .tag-button {\n            background: transparent;\n            border: 0;\n            color: var(--text-muted);\n            cursor: pointer;\n        }\n\n        .compare-table {\n            min-width: 760px;\n        }\n\n        .range-list {\n            display: grid;\n            gap: 12px;\n        }\n\n        .range-row {\n            display: grid;\n            grid-template-columns: 112px 1fr 42px;\n            gap: 10px;\n            align-items: center;\n            color: var(--text-secondary);\n            font-size: 13px;\n        }\n\n        .range-row input[type=\"range\"] {\n            width: 100%;\n            accent-color: var(--accent-blue);\n        }\n\n        .decision-box {\n            margin-top: 14px;\n            border: 1px solid var(--border-color);\n            background: rgba(0,0,0,0.18);\n            border-radius: 8px;\n            padding: 14px;\n        }\n\n        .decision-score {\n            display: flex;\n            align-items: flex-end;\n            gap: 10px;\n            margin-bottom: 8px;\n        }\n\n        .decision-score strong {\n            font-size: 34px;\n            line-height: 1;\n        }\n\n        .decision-score span {\n            color: var(--text-muted);\n            font-size: 12px;\n            padding-bottom: 5px;\n        }\n\n        .decision-text {\n            color: var(--text-secondary);\n            font-size: 13px;\n            line-height: 1.7;\n        }\n\n        .position-grid {\n            display: grid;\n            grid-template-columns: repeat(2, minmax(0, 1fr));\n            gap: 10px;\n        }\n\n        .field label {\n            display: block;\n            color: var(--text-muted);\n            font-size: 12px;\n            margin-bottom: 5px;\n        }\n\n        .result-grid {\n            display: grid;\n            grid-template-columns: repeat(3, minmax(0, 1fr));\n            gap: 8px;\n            margin-top: 12px;\n        }\n\n        .result-cell {\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            background: rgba(0,0,0,0.16);\n            padding: 10px;\n        }\n\n        .result-cell span {\n            color: var(--text-muted);\n            font-size: 11px;\n        }\n\n        .result-cell strong {\n            display: block;\n            font-size: 16px;\n            margin-top: 4px;\n        }\n\n        .card-actions {\n            display: flex;\n            gap: 6px;\n            flex: 0 0 auto;\n        }\n\n        .detail-btn {\n            width: auto;\n            padding: 0 10px;\n            font-size: 12px;\n        }\n\n        .signal-list {\n            display: grid;\n            gap: 8px;\n            margin-top: 12px;\n        }\n\n        .signal-item {\n            display: flex;\n            gap: 8px;\n            align-items: flex-start;\n            color: var(--text-secondary);\n            font-size: 12px;\n            line-height: 1.55;\n        }\n\n        .signal-item input {\n            margin-top: 3px;\n            accent-color: var(--accent-green);\n        }\n\n        .detail-modal {\n            display: none;\n            position: fixed;\n            inset: 0;\n            z-index: 300;\n            background: rgba(2, 6, 23, 0.72);\n            backdrop-filter: blur(10px);\n            padding: 24px;\n            overflow-y: auto;\n        }\n\n        .detail-modal.open {\n            display: block;\n        }\n\n        .detail-dialog {\n            max-width: 980px;\n            margin: 24px auto;\n            background: var(--bg-card);\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            overflow: hidden;\n            box-shadow: 0 24px 80px rgba(0,0,0,0.42);\n        }\n\n        .detail-head {\n            display: flex;\n            justify-content: space-between;\n            gap: 16px;\n            align-items: flex-start;\n            padding: 20px;\n            border-bottom: 1px solid var(--border-color);\n            background: rgba(0,0,0,0.18);\n        }\n\n        .detail-head h2 {\n            font-size: 24px;\n            margin-bottom: 4px;\n        }\n\n        .close-btn {\n            border: 1px solid var(--border-color);\n            background: rgba(255,255,255,0.05);\n            color: var(--text-secondary);\n            width: 34px;\n            height: 34px;\n            border-radius: 8px;\n            cursor: pointer;\n        }\n\n        .detail-body {\n            padding: 20px;\n        }\n\n        .detail-grid {\n            display: grid;\n            grid-template-columns: 1fr 1fr;\n            gap: 14px;\n        }\n\n        .detail-section {\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            background: rgba(0,0,0,0.14);\n            padding: 14px;\n            min-width: 0;\n        }\n\n        .detail-section h3 {\n            font-size: 14px;\n            margin-bottom: 10px;\n        }\n\n        .detail-section p,\n        .detail-section li {\n            color: var(--text-secondary);\n            font-size: 13px;\n            line-height: 1.7;\n        }\n\n        .detail-section ul {\n            padding-left: 18px;\n        }\n\n        /* Strategy Explanation */\n        .strategy-box {\n            max-width: 1400px;\n            margin: 24px auto;\n            padding: 0 24px;\n        }\n\n        .strategy-card {\n            background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(249, 115, 22, 0.05));\n            border: 1px solid rgba(245, 158, 11, 0.2);\n            border-radius: 16px;\n            padding: 24px 28px;\n        }\n\n        .strategy-card h3 {\n            color: var(--accent-gold);\n            font-size: 16px;\n            margin-bottom: 12px;\n            display: flex;\n            align-items: center;\n            gap: 8px;\n        }\n\n        .strategy-flow {\n            display: flex;\n            align-items: center;\n            flex-wrap: wrap;\n            gap: 8px;\n            margin-top: 16px;\n        }\n\n        .flow-node {\n            background: var(--bg-card);\n            padding: 8px 16px;\n            border-radius: 8px;\n            font-size: 13px;\n            border: 1px solid var(--border-color);\n            white-space: nowrap;\n        }\n\n        .flow-node.core {\n            background: rgba(245, 158, 11, 0.2);\n            border-color: var(--accent-gold);\n            color: var(--accent-gold);\n            font-weight: 600;\n        }\n\n        .flow-arrow {\n            color: var(--text-muted);\n            font-size: 18px;\n        }\n\n        /* Chain Navigation */\n        .chain-nav {\n            max-width: 1400px;\n            margin: 0 auto 24px;\n            padding: 0 24px;\n        }\n\n        .chain-tabs {\n            display: flex;\n            gap: 10px;\n            flex-wrap: wrap;\n        }\n\n        .chain-tab {\n            padding: 10px 20px;\n            background: var(--bg-card);\n            border: 1px solid var(--border-color);\n            border-radius: 10px;\n            cursor: pointer;\n            font-size: 14px;\n            color: var(--text-secondary);\n            transition: all 0.3s ease;\n            white-space: nowrap;\n        }\n\n        .chain-tab:hover {\n            background: var(--bg-card-hover);\n            color: var(--text-primary);\n        }\n\n        .chain-tab.active {\n            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));\n            border-color: var(--accent-blue);\n            color: var(--text-primary);\n            font-weight: 600;\n        }\n\n        /* Main Content */\n        .main-content {\n            max-width: 1400px;\n            margin: 0 auto;\n            padding: 0 24px 60px;\n        }\n\n        .chain-detail {\n            display: none;\n        }\n\n        .chain-detail.active {\n            display: block;\n        }\n\n        /* Chain Header */\n        .chain-header {\n            margin-bottom: 28px;\n        }\n\n        .chain-header h2 {\n            font-size: 24px;\n            font-weight: 700;\n            margin-bottom: 8px;\n        }\n\n        .chain-header .chain-desc {\n            color: var(--text-secondary);\n            font-size: 14px;\n        }\n\n        /* Logic Flow Section */\n        .logic-section {\n            margin-bottom: 32px;\n        }\n\n        .section-title {\n            font-size: 16px;\n            font-weight: 600;\n            margin-bottom: 16px;\n            display: flex;\n            align-items: center;\n            gap: 8px;\n            color: var(--text-primary);\n        }\n\n        .section-title .icon {\n            font-size: 20px;\n        }\n\n        .logic-flow-horizontal {\n            display: flex;\n            align-items: stretch;\n            gap: 0;\n            overflow-x: auto;\n            padding-bottom: 8px;\n        }\n\n        .logic-step {\n            flex: 1;\n            min-width: 180px;\n            background: var(--bg-card);\n            border: 1px solid var(--border-color);\n            border-radius: 12px;\n            padding: 16px;\n            position: relative;\n            transition: all 0.3s ease;\n        }\n\n        .logic-step:hover {\n            border-color: var(--accent-blue);\n            transform: translateY(-2px);\n        }\n\n        .logic-step.core-benefit {\n            border-color: var(--accent-gold);\n            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(249, 115, 22, 0.05));\n        }\n\n        .logic-step .step-num {\n            display: inline-block;\n            background: rgba(59, 130, 246, 0.2);\n            color: var(--accent-blue);\n            width: 24px;\n            height: 24px;\n            border-radius: 50%;\n            text-align: center;\n            line-height: 24px;\n            font-size: 12px;\n            font-weight: 600;\n            margin-bottom: 8px;\n        }\n\n        .logic-step.core-benefit .step-num {\n            background: rgba(245, 158, 11, 0.3);\n            color: var(--accent-gold);\n        }\n\n        .logic-step .step-title {\n            font-weight: 600;\n            font-size: 14px;\n            margin-bottom: 4px;\n        }\n\n        .logic-step .step-desc {\n            font-size: 12px;\n            color: var(--text-secondary);\n            line-height: 1.5;\n        }\n\n        .logic-step .core-tag {\n            display: inline-block;\n            background: rgba(245, 158, 11, 0.2);\n            color: var(--accent-gold);\n            padding: 2px 8px;\n            border-radius: 4px;\n            font-size: 11px;\n            margin-top: 8px;\n            font-weight: 600;\n        }\n\n        .logic-connector {\n            display: flex;\n            align-items: center;\n            padding: 0 4px;\n            color: var(--text-muted);\n            font-size: 20px;\n            flex-shrink: 0;\n        }\n\n        /* Stock Cards */\n        .stocks-grid {\n            display: grid;\n            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));\n            gap: 16px;\n        }\n\n        .stock-card {\n            background: var(--bg-card);\n            border: 1px solid var(--border-color);\n            border-radius: 14px;\n            padding: 20px;\n            transition: all 0.3s ease;\n            position: relative;\n            overflow: hidden;\n        }\n\n        .stock-card:hover {\n            border-color: var(--accent-blue);\n            transform: translateY(-3px);\n            box-shadow: 0 8px 25px rgba(0,0,0,0.3);\n        }\n\n        .stock-card.core {\n            border-color: rgba(245, 158, 11, 0.4);\n            background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent);\n        }\n\n        .stock-card.core::before {\n            content: '核心受益';\n            position: absolute;\n            top: 12px;\n            right: -28px;\n            background: linear-gradient(135deg, #f59e0b, #f97316);\n            color: #000;\n            font-size: 11px;\n            font-weight: 700;\n            padding: 2px 32px;\n            transform: rotate(45deg);\n        }\n\n        .stock-topline {\n            display: flex;\n            align-items: flex-start;\n            justify-content: space-between;\n            gap: 12px;\n        }\n\n        .mini-btn {\n            width: 32px;\n            height: 32px;\n            border-radius: 8px;\n            border: 1px solid var(--border-color);\n            background: rgba(255,255,255,0.04);\n            color: var(--text-secondary);\n            cursor: pointer;\n            flex: 0 0 auto;\n        }\n\n        .mini-btn.active,\n        .mini-btn:hover {\n            color: var(--accent-gold);\n            border-color: rgba(245, 158, 11, 0.45);\n            background: rgba(245, 158, 11, 0.12);\n        }\n\n        .stock-score-row {\n            display: grid;\n            grid-template-columns: repeat(3, 1fr);\n            gap: 8px;\n            margin: 12px 0;\n        }\n\n        .stock-score {\n            background: rgba(0,0,0,0.16);\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            padding: 8px;\n            min-width: 0;\n        }\n\n        .stock-score span {\n            display: block;\n            color: var(--text-muted);\n            font-size: 11px;\n            margin-bottom: 4px;\n        }\n\n        .stock-score strong {\n            font-size: 15px;\n        }\n\n        .risk-panel {\n            display: grid;\n            grid-template-columns: repeat(3, minmax(0, 1fr));\n            gap: 12px;\n            margin: 24px 0 32px;\n        }\n\n        .risk-item {\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            padding: 14px;\n            background: rgba(0,0,0,0.14);\n        }\n\n        .risk-item strong {\n            display: block;\n            font-size: 13px;\n            margin-bottom: 6px;\n        }\n\n        .risk-item p {\n            color: var(--text-secondary);\n            font-size: 12px;\n            line-height: 1.6;\n        }\n\n        .stock-name {\n            font-size: 18px;\n            font-weight: 700;\n            margin-bottom: 4px;\n        }\n\n        .stock-code {\n            color: var(--text-muted);\n            font-size: 13px;\n            margin-bottom: 12px;\n        }\n\n        .stock-meta {\n            display: flex;\n            gap: 12px;\n            margin-bottom: 12px;\n            flex-wrap: wrap;\n        }\n\n        .stock-meta-item {\n            font-size: 12px;\n            color: var(--text-secondary);\n        }\n\n        .stock-meta-item span {\n            color: var(--text-primary);\n            font-weight: 500;\n        }\n\n        .stock-reason {\n            font-size: 13px;\n            color: var(--text-secondary);\n            line-height: 1.6;\n            padding: 12px;\n            background: rgba(0,0,0,0.2);\n            border-radius: 8px;\n            margin-bottom: 12px;\n        }\n\n        .stock-reason strong {\n            color: var(--accent-gold);\n        }\n\n        .stock-tags {\n            display: flex;\n            gap: 6px;\n            flex-wrap: wrap;\n        }\n\n        .stock-tag {\n            padding: 3px 10px;\n            border-radius: 6px;\n            font-size: 11px;\n            font-weight: 500;\n        }\n\n        .stock-tag.benefit {\n            background: rgba(245, 158, 11, 0.15);\n            color: var(--accent-gold);\n        }\n\n        .stock-tag.sector {\n            background: rgba(59, 130, 246, 0.15);\n            color: var(--accent-blue);\n        }\n\n        .stock-tag.risk {\n            background: rgba(239, 68, 68, 0.15);\n            color: var(--accent-red);\n        }\n\n        /* Benefit Level */\n        .benefit-level {\n            display: flex;\n            align-items: center;\n            gap: 4px;\n            margin-bottom: 10px;\n        }\n\n        .benefit-level .label {\n            font-size: 12px;\n            color: var(--text-secondary);\n            margin-right: 4px;\n        }\n\n        .benefit-dot {\n            width: 8px;\n            height: 8px;\n            border-radius: 50%;\n            background: var(--border-color);\n        }\n\n        .benefit-dot.active {\n            background: var(--accent-gold);\n        }\n\n        /* Category Filter */\n        .category-filter {\n            display: flex;\n            gap: 8px;\n            margin-bottom: 20px;\n            flex-wrap: wrap;\n        }\n\n        .filter-btn {\n            padding: 6px 14px;\n            background: var(--bg-card);\n            border: 1px solid var(--border-color);\n            border-radius: 8px;\n            cursor: pointer;\n            font-size: 13px;\n            color: var(--text-secondary);\n            transition: all 0.2s ease;\n        }\n\n        .filter-btn:hover, .filter-btn.active {\n            background: rgba(59, 130, 246, 0.15);\n            border-color: var(--accent-blue);\n            color: var(--accent-blue);\n        }\n\n        /* Disclaimer */\n        .disclaimer {\n            max-width: 1400px;\n            margin: 40px auto 0;\n            padding: 24px;\n            border-top: 1px solid var(--border-color);\n        }\n\n        .disclaimer p {\n            color: var(--text-muted);\n            font-size: 12px;\n            line-height: 1.8;\n            text-align: center;\n        }\n\n        /* Responsive */\n        @media (max-width: 768px) {\n            .header h1 { font-size: 22px; }\n            .dashboard-grid, .workspace-grid, .advanced-grid, .risk-panel, .builder-grid, .detail-grid { grid-template-columns: 1fr; }\n            .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n            .tool-row { grid-template-columns: 1fr; }\n            .watch-list { grid-template-columns: 1fr; }\n            .compare-slots, .position-grid, .result-grid { grid-template-columns: 1fr; }\n            .range-row { grid-template-columns: 92px 1fr 34px; }\n            .detail-modal { padding: 10px; }\n            .logic-flow-horizontal { flex-direction: column; }\n            .logic-connector { transform: rotate(90deg); padding: 8px 0; justify-content: center; }\n            .stocks-grid { grid-template-columns: 1fr; }\n            .chain-tabs { gap: 6px; }\n            .chain-tab { padding: 8px 14px; font-size: 13px; }\n        }\n\n        /* Scrollbar */\n        ::-webkit-scrollbar { width: 6px; height: 6px; }\n        ::-webkit-scrollbar-track { background: var(--bg-primary); }\n        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }\n        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }\n\n        /* Tooltip */\n        .tooltip {\n            position: relative;\n        }\n        .tooltip:hover::after {\n            content: attr(data-tip);\n            position: absolute;\n            bottom: 100%;\n            left: 50%;\n            transform: translateX(-50%);\n            background: #1e293b;\n            color: var(--text-primary);\n            padding: 6px 12px;\n            border-radius: 6px;\n            font-size: 12px;\n            white-space: nowrap;\n            z-index: 10;\n            margin-bottom: 4px;\n        }\n    </style>\n</head>\n<body>\n\n<div class=\"header\">\n    <div class=\"header-inner\">\n        <h1>A股核心受益选股分析</h1>\n        <div class=\"subtitle\">基于舟哥选股策略 — 选择核心受益题材，把握产业链投资主线</div>\n        <div class=\"strategy-tag\">策略核心：题材爆发 → 逻辑推演 → 锁定核心受益环节 → 精选个股</div>\n    </div>\n</div>\n\n<div class=\"strategy-box\">\n    <div class=\"strategy-card\">\n        <h3>💡 舟哥策略示例：如何推演核心受益</h3>\n        <div style=\"color: var(--text-secondary); font-size: 13px; line-height: 1.8;\">\n            以\"小龙虾\"爆火为例，逐层推演受益逻辑，找到最终的核心受益环节：\n        </div>\n        <div class=\"strategy-flow\">\n            <div class=\"flow-node\">小龙虾爆火</div>\n            <div class=\"flow-arrow\">→</div>\n            <div class=\"flow-node\">本地部署需求增加</div>\n            <div class=\"flow-arrow\">→</div>\n            <div class=\"flow-node\">训练消耗Token增加</div>\n            <div class=\"flow-arrow\">→</div>\n            <div class=\"flow-node\">算力需求暴增</div>\n            <div class=\"flow-arrow\">→</div>\n            <div class=\"flow-node core\">⭐ 算力租赁（核心受益）</div>\n        </div>\n    </div>\n</div>\n\n<div class=\"chain-nav\">\n    <div class=\"chain-tabs\" id=\"chainTabs\"></div>\n</div>\n\n<div class=\"dashboard\">\n    <div class=\"dashboard-grid\">\n        <section class=\"panel\">\n            <div class=\"panel-title\">\n                <h2>核心受益全局看板</h2>\n                <span class=\"panel-note\" id=\"updateStamp\"></span>\n            </div>\n            <div class=\"metric-grid\" id=\"metricGrid\"></div>\n            <div class=\"tool-row\">\n                <input class=\"search-input\" id=\"globalSearch\" placeholder=\"搜索板块、公司、代码、产业环节\">\n                <select class=\"select-input\" id=\"riskMode\">\n                    <option value=\"balanced\">均衡观察</option>\n                    <option value=\"aggressive\">进攻优先</option>\n                    <option value=\"defensive\">防守优先</option>\n                </select>\n                <button class=\"action-btn\" onclick=\"resetWorkspace()\">重置工作台</button>\n            </div>\n        </section>\n        <section class=\"panel\">\n            <div class=\"panel-title\">\n                <h3>板块强度排行</h3>\n                <span class=\"panel-note\">按核心受益个股密度计算</span>\n            </div>\n            <div class=\"sector-rank\" id=\"sectorRank\"></div>\n        </section>\n    </div>\n</div>\n\n<div class=\"workspace-grid\">\n    <section class=\"panel\">\n        <div class=\"panel-title\">\n            <h3>核心候选矩阵</h3>\n            <span class=\"panel-note\">受益程度 + 产业链位置 + 题材弹性</span>\n        </div>\n        <div class=\"matrix-wrap\">\n            <table class=\"matrix-table\">\n                <thead>\n                    <tr>\n                        <th>公司</th>\n                        <th>板块</th>\n                        <th>环节</th>\n                        <th>核心分</th>\n                        <th>观察点</th>\n                    </tr>\n                </thead>\n                <tbody id=\"matrixBody\"></tbody>\n            </table>\n        </div>\n    </section>\n    <section class=\"panel\">\n        <div class=\"panel-title\">\n            <h3>观察清单</h3>\n            <span class=\"panel-note\">点个股卡片右上角收藏</span>\n        </div>\n        <div class=\"watch-list\" id=\"watchList\"></div>\n    </section>\n</div>\n\n<div class=\"workspace-grid advanced-grid\">\n    <section class=\"panel\">\n        <div class=\"panel-title\">\n            <h3>三股横向对比</h3>\n            <span class=\"panel-note\">在个股卡片点“对比”加入</span>\n        </div>\n        <div class=\"compare-slots\" id=\"compareSlots\"></div>\n        <div class=\"matrix-wrap\">\n            <table class=\"matrix-table compare-table\">\n                <thead>\n                    <tr>\n                        <th>公司</th>\n                        <th>核心逻辑</th>\n                        <th>题材位置</th>\n                        <th>核心分</th>\n                        <th>风险</th>\n                    </tr>\n                </thead>\n                <tbody id=\"compareBody\"></tbody>\n            </table>\n        </div>\n    </section>\n    <div class=\"panel-stack\">\n        <section class=\"panel\">\n            <div class=\"panel-title\">\n                <h3>题材强度模拟器</h3>\n                <span class=\"panel-note\">用来判断板块是否值得加深研究</span>\n            </div>\n            <div class=\"range-list\">\n                <label class=\"range-row\">政策催化 <input type=\"range\" id=\"simPolicy\" min=\"0\" max=\"100\" value=\"70\"><span id=\"simPolicyVal\">70</span></label>\n                <label class=\"range-row\">需求确定 <input type=\"range\" id=\"simDemand\" min=\"0\" max=\"100\" value=\"78\"><span id=\"simDemandVal\">78</span></label>\n                <label class=\"range-row\">供给瓶颈 <input type=\"range\" id=\"simBottleneck\" min=\"0\" max=\"100\" value=\"82\"><span id=\"simBottleneckVal\">82</span></label>\n                <label class=\"range-row\">业绩兑现 <input type=\"range\" id=\"simEarnings\" min=\"0\" max=\"100\" value=\"62\"><span id=\"simEarningsVal\">62</span></label>\n                <label class=\"range-row\">拥挤程度 <input type=\"range\" id=\"simCrowd\" min=\"0\" max=\"100\" value=\"48\"><span id=\"simCrowdVal\">48</span></label>\n            </div>\n            <div class=\"decision-box\" id=\"simResult\"></div>\n        </section>\n        <section class=\"panel\">\n            <div class=\"panel-title\">\n                <h3>买前评分器</h3>\n                <span class=\"panel-note\">把主观判断变成纪律分</span>\n            </div>\n            <div class=\"range-list\">\n                <label class=\"range-row\">逻辑硬度 <input type=\"range\" id=\"buyLogic\" min=\"0\" max=\"100\" value=\"80\"><span id=\"buyLogicVal\">80</span></label>\n                <label class=\"range-row\">业绩跟踪 <input type=\"range\" id=\"buyProof\" min=\"0\" max=\"100\" value=\"65\"><span id=\"buyProofVal\">65</span></label>\n                <label class=\"range-row\">估值安全 <input type=\"range\" id=\"buyValue\" min=\"0\" max=\"100\" value=\"52\"><span id=\"buyValueVal\">52</span></label>\n                <label class=\"range-row\">走势强度 <input type=\"range\" id=\"buyTrend\" min=\"0\" max=\"100\" value=\"58\"><span id=\"buyTrendVal\">58</span></label>\n                <label class=\"range-row\">风险可控 <input type=\"range\" id=\"buyRisk\" min=\"0\" max=\"100\" value=\"60\"><span id=\"buyRiskVal\">60</span></label>\n            </div>\n            <div class=\"decision-box\" id=\"buyResult\"></div>\n        </section>\n    </div>\n</div>\n\n<div class=\"workspace-grid\">\n    <section class=\"panel\">\n        <div class=\"panel-title\">\n            <h3>仓位与止损计算器</h3>\n            <span class=\"panel-note\">先算亏损边界，再谈收益空间</span>\n        </div>\n        <div class=\"position-grid\">\n            <div class=\"field\"><label>账户资金</label><input class=\"text-input\" id=\"capitalInput\" type=\"number\" value=\"100000\"></div>\n            <div class=\"field\"><label>单笔风险比例 %</label><input class=\"text-input\" id=\"riskInput\" type=\"number\" value=\"1.5\" step=\"0.1\"></div>\n            <div class=\"field\"><label>计划买入价</label><input class=\"text-input\" id=\"entryInput\" type=\"number\" value=\"20\" step=\"0.01\"></div>\n            <div class=\"field\"><label>止损价</label><input class=\"text-input\" id=\"stopInput\" type=\"number\" value=\"18.5\" step=\"0.01\"></div>\n        </div>\n        <button class=\"action-btn\" style=\"margin-top:10px;\" onclick=\"calculatePosition()\">计算仓位</button>\n        <div class=\"result-grid\" id=\"positionResult\"></div>\n    </section>\n    <section class=\"panel\">\n        <div class=\"panel-title\">\n            <h3>核心受益验证信号</h3>\n            <span class=\"panel-note\">每天复盘可勾选</span>\n        </div>\n        <div class=\"signal-list\" id=\"signalList\">\n            <label class=\"signal-item\"><input type=\"checkbox\"> 板块核心公司成交额持续放大，而不是只有边缘小票活跃</label>\n            <label class=\"signal-item\"><input type=\"checkbox\"> 核心环节出现订单、涨价、扩产、良率提升或客户认证</label>\n            <label class=\"signal-item\"><input type=\"checkbox\"> 财报或公告能验证逻辑，不只停留在社媒热度</label>\n            <label class=\"signal-item\"><input type=\"checkbox\"> 龙头强于板块平均，说明资金认可主线而非纯扩散</label>\n            <label class=\"signal-item\"><input type=\"checkbox\"> 估值、涨幅、筹码拥挤度仍允许继续跟踪</label>\n        </div>\n        <div class=\"decision-box\" id=\"signalResult\"></div>\n    </section>\n</div>\n\n<div class=\"main-content\" id=\"mainContent\"></div>\n\n<div class=\"workspace-grid\">\n    <section class=\"panel\">\n        <div class=\"panel-title\">\n            <h3>题材核心受益推演器</h3>\n            <span class=\"panel-note\">用同一套逻辑拆新题材</span>\n        </div>\n        <div class=\"builder-grid\">\n            <input class=\"text-input\" id=\"themeInput\" placeholder=\"题材，例如：小龙虾、AI手机、商业航天\">\n            <input class=\"text-input\" id=\"eventInput\" placeholder=\"催化事件，例如：订单爆发、政策落地、爆款产品\">\n            <input class=\"text-input\" id=\"demandInput\" placeholder=\"直接需求，例如：训练、配送、算力、产线扩张\">\n            <input class=\"text-input\" id=\"bottleneckInput\" placeholder=\"卡脖子环节，例如：GPU、空管、减速器、设备\">\n        </div>\n        <button class=\"action-btn\" style=\"margin-top:10px;\" onclick=\"buildThemeLogic()\">生成推演链</button>\n        <div class=\"builder-result\" id=\"builderResult\">输入题材后，会生成“催化 → 需求 → 约束 → 核心受益环节 → 候选公司筛选条件”的分析链。</div>\n    </section>\n    <section class=\"panel\">\n        <div class=\"panel-title\">\n            <h3>交易前复盘清单</h3>\n            <span class=\"panel-note\">把题材热度翻译成可执行标准</span>\n        </div>\n        <div class=\"risk-panel\" style=\"grid-template-columns:1fr; margin:0;\">\n            <div class=\"risk-item\"><strong>1. 是不是核心受益？</strong><p>优先看收入能否直接随需求增加，而不是只沾概念。越靠近供给瓶颈，逻辑越硬。</p></div>\n            <div class=\"risk-item\"><strong>2. 业绩兑现周期多长？</strong><p>订单、产能、价格、毛利率至少有一个能跟踪。只讲空间、不讲兑现节奏的题材要降权。</p></div>\n            <div class=\"risk-item\"><strong>3. 估值和拥挤度是否透支？</strong><p>核心标的也会因为一致预期过满而回撤。观察成交额、龙虎榜、融资余额和研报密度。</p></div>\n        </div>\n    </section>\n</div>\n\n<div class=\"detail-modal\" id=\"detailModal\" onclick=\"closeDetailFromBackdrop(event)\">\n    <div class=\"detail-dialog\" id=\"detailDialog\"></div>\n</div>\n\n<div class=\"disclaimer\">\n    <p>⚠️ 免责声明：本工具仅供学习研究使用，不构成任何投资建议。股市有风险，投资需谨慎。<br>\n    数据基于公开信息和产业链逻辑推演，个股信息可能存在滞后，请以实际行情为准。核心受益程度为逻辑推演，不保证收益。</p>\n</div>\n\n<script>\n// ========================\n// 产业链数据定义\n// ========================\nconst chainData = [\n    {\n        id: 'ai',\n        name: '🤖 AI人工智能',\n        color: '#3b82f6',\n        desc: '从大模型训练到应用落地，AI产业链条长、环节多，核心受益集中在算力和芯片环节',\n        logicSteps: [\n            { title: '大模型爆发', desc: 'ChatGPT/DeepSeek等引爆AI浪潮，模型参数指数级增长', isCore: false },\n            { title: '算力需求暴增', desc: '训练+推理对GPU/服务器需求呈几何级增长', isCore: false },\n            { title: '芯片/算力供给', desc: 'GPU供不应求，国产替代加速，算力基础设施扩容', isCore: true },\n            { title: '算力租赁/IDC', desc: '算力需求外溢，算力租赁和数据中心服务量价齐升', isCore: true },\n            { title: 'AI应用落地', desc: '办公/医疗/教育/金融等场景AI应用逐步落地', isCore: false },\n        ],\n        categories: ['全部', '算力核心', '芯片半导体', '数据要素', 'AI应用'],\n        stocks: [\n            {\n                name: '中际旭创', code: '300308.SZ',\n                marketCap: '约1800亿', sector: '光模块',\n                benefitLevel: 5,\n                reason: '全球光模块龙头，800G/1.6T光模块直接受益于AI算力扩张，<strong>英伟达核心供应商</strong>，业绩弹性最大',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '光模块', type: 'sector' }],\n                category: '算力核心'\n            },\n            {\n                name: '新易盛', code: '300502.SZ',\n                marketCap: '约800亿', sector: '光模块',\n                benefitLevel: 5,\n                reason: '光模块第二梯队龙头，800G产品放量，<strong>毛利率持续提升</strong>，深度绑定海外云厂商',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '光模块', type: 'sector' }],\n                category: '算力核心'\n            },\n            {\n                name: '寒武纪', code: '688256.SH',\n                marketCap: '约2500亿', sector: 'AI芯片',\n                benefitLevel: 5,\n                reason: '国产AI芯片龙头，<strong>思元系列GPU替代空间巨大</strong>，信创+AI双重驱动，政策扶持力度最强',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '国产替代', type: 'sector' }],\n                category: '芯片半导体'\n            },\n            {\n                name: '海光信息', code: '688041.SH',\n                marketCap: '约2800亿', sector: 'CPU/DCU',\n                benefitLevel: 4,\n                reason: '国产CPU+DCU双线布局，<strong>深算系列DCU对标英伟达</strong>，党政信创+AI算力双重受益',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '国产替代', type: 'sector' }],\n                category: '芯片半导体'\n            },\n            {\n                name: '润泽科技', code: '300442.SZ',\n                marketCap: '约900亿', sector: 'IDC/算力',\n                benefitLevel: 5,\n                reason: '国内领先IDC运营商，<strong>AI算力中心大规模扩产</strong>，上架率行业领先，直接承接算力租赁需求',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '算力租赁', type: 'sector' }],\n                category: '算力核心'\n            },\n            {\n                name: '工业富联', code: '601138.SH',\n                marketCap: '约4500亿', sector: 'AI服务器',\n                benefitLevel: 4,\n                reason: '全球AI服务器代工龙头，<strong>英伟达GB200核心代工厂</strong>，AI服务器营收占比快速提升',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '服务器', type: 'sector' }],\n                category: '算力核心'\n            },\n            {\n                name: '沪电股份', code: '002463.SZ',\n                marketCap: '约600亿', sector: 'PCB',\n                benefitLevel: 4,\n                reason: '高多层PCB龙头，<strong>AI服务器用PCB价值量是传统的3-5倍</strong>，已进入英伟达供应链',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: 'PCB', type: 'sector' }],\n                category: '算力核心'\n            },\n            {\n                name: '沃尔核材', code: '002130.SZ',\n                marketCap: '约200亿', sector: '铜缆连接',\n                benefitLevel: 4,\n                reason: '高速铜缆连接器供应商，<strong>GB200架构下铜连接方案核心受益</strong>，替代光模块的性价比方案',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '铜连接', type: 'sector' }],\n                category: '算力核心'\n            },\n            {\n                name: '易华录', code: '300212.SZ',\n                marketCap: '约150亿', sector: '数据要素',\n                benefitLevel: 3,\n                reason: '数据湖+蓝光存储龙头，<strong>数据要素市场化核心标的</strong>，AI训练数据供给端受益',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: '数据要素', type: 'sector' }],\n                category: '数据要素'\n            },\n            {\n                name: '金山办公', code: '688111.SH',\n                marketCap: '约1300亿', sector: 'AI办公',\n                benefitLevel: 3,\n                reason: 'WPS AI赋能办公场景，<strong>C端付费转化+B端信创替代</strong>，AI应用落地确定性最高',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: 'AI应用', type: 'sector' }],\n                category: 'AI应用'\n            },\n            {\n                name: '科大讯飞', code: '002230.SZ',\n                marketCap: '约900亿', sector: 'AI语音/教育',\n                benefitLevel: 3,\n                reason: '国产大模型+教育/医疗场景落地，<strong>星火大模型+行业应用</strong>，但变现节奏偏慢',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: 'AI应用', type: 'sector' }, { text: '变现慢', type: 'risk' }],\n                category: 'AI应用'\n            },\n        ]\n    },\n    {\n        id: 'nev',\n        name: '🚗 新能源汽车',\n        color: '#10b981',\n        desc: '从锂矿到整车，新能源汽车产业链长且复杂，核心受益集中在电池和智能化环节',\n        logicSteps: [\n            { title: '新能源车渗透率提升', desc: '国内渗透率超40%，全球电动化趋势不可逆', isCore: false },\n            { title: '电池需求增长', desc: '动力电池装机量持续高增，技术迭代加速', isCore: true },\n            { title: '智能化加速', desc: '智驾+智能座舱成为新卖点，渗透率快速提升', isCore: true },\n            { title: '充电基础设施', desc: '超充网络建设加速，充电桩需求放量', isCore: false },\n            { title: '整车竞争加剧', desc: '价格战持续，整车利润承压，龙头集中度提升', isCore: false },\n        ],\n        categories: ['全部', '动力电池', '智能化', '充电桩', '整车'],\n        stocks: [\n            {\n                name: '宁德时代', code: '300750.SZ',\n                marketCap: '约11000亿', sector: '动力电池',\n                benefitLevel: 5,\n                reason: '全球动力电池绝对龙头，市占率超35%，<strong>麒麟电池+M3P技术领先</strong>，全产业链话语权最强',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '动力电池', type: 'sector' }],\n                category: '动力电池'\n            },\n            {\n                name: '比亚迪', code: '002594.SZ',\n                marketCap: '约9000亿', sector: '整车+电池',\n                benefitLevel: 5,\n                reason: '新能源整车+电池+半导体全产业链布局，<strong>垂直一体化优势无人能及</strong>，规模效应持续释放',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '整车', type: 'sector' }],\n                category: '整车'\n            },\n            {\n                name: '德赛西威', code: '002920.SZ',\n                marketCap: '约700亿', sector: '智能座舱/智驾',\n                benefitLevel: 5,\n                reason: '智能座舱+智驾域控制器龙头，<strong>高通8155/8295核心合作伙伴</strong>，智能化最大受益者',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '智能化', type: 'sector' }],\n                category: '智能化'\n            },\n            {\n                name: '三花智控', code: '002050.SZ',\n                marketCap: '约700亿', sector: '热管理',\n                benefitLevel: 4,\n                reason: '新能源车热管理龙头，<strong>电子膨胀阀全球市占率超50%</strong>，热泵系统单车价值量提升',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '热管理', type: 'sector' }],\n                category: '动力电池'\n            },\n            {\n                name: '拓普集团', code: '601689.SH',\n                marketCap: '约800亿', sector: '汽车零部件',\n                benefitLevel: 4,\n                reason: 'Tier 0.5模式开创者，<strong>空气悬架+线控制动+机器人</strong>多赛道布局，客户覆盖全球主流车企',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '零部件', type: 'sector' }],\n                category: '动力电池'\n            },\n            {\n                name: '特锐德', code: '300001.SZ',\n                marketCap: '约300亿', sector: '充电桩',\n                benefitLevel: 4,\n                reason: '国内充电桩运营龙头，<strong>充电桩保有量市占率超40%</strong>，超充技术领先，运营端规模效应显现',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '充电桩', type: 'sector' }],\n                category: '充电桩'\n            },\n            {\n                name: '亿纬锂能', code: '300014.SZ',\n                marketCap: '约900亿', sector: '动力电池',\n                benefitLevel: 4,\n                reason: '动力电池+储能双轮驱动，<strong>大圆柱电池技术路线领先</strong>，海外客户拓展顺利',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '动力电池', type: 'sector' }],\n                category: '动力电池'\n            },\n            {\n                name: '保隆科技', code: '603197.SH',\n                marketCap: '约100亿', sector: '空气悬架/传感器',\n                benefitLevel: 3,\n                reason: '空气悬架国产替代先锋，<strong>TPMS+空悬+ADAS传感器</strong>多产品线受益智能化',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: '智能化', type: 'sector' }],\n                category: '智能化'\n            },\n        ]\n    },\n    {\n        id: 'semiconductor',\n        name: '🔧 半导体芯片',\n        color: '#8b5cf6',\n        desc: '国产替代是半导体投资核心逻辑，美日荷出口管制加严加速国产化进程',\n        logicSteps: [\n            { title: '出口管制加严', desc: '美日荷对华半导体设备/芯片限制持续升级', isCore: false },\n            { title: '国产替代加速', desc: '供应链安全驱动，国产设备/材料验证导入加速', isCore: true },\n            { title: '先进制程突破', desc: '28nm→14nm→7nm逐步突破，良率持续提升', isCore: true },\n            { title: '存储扩产周期', desc: '长江存储/长鑫存储持续扩产，设备需求放量', isCore: true },\n            { title: 'SoC设计崛起', desc: '手机/汽车/IoT芯片自主设计能力提升', isCore: false },\n        ],\n        categories: ['全部', '设备', '材料', '设计', '封测'],\n        stocks: [\n            {\n                name: '北方华创', code: '002371.SZ',\n                marketCap: '约2800亿', sector: '半导体设备',\n                benefitLevel: 5,\n                reason: '国产半导体设备绝对龙头，<strong>刻蚀+PVD+CVD+氧化扩散全覆盖</strong>，晶圆厂扩产最直接受益',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '设备', type: 'sector' }],\n                category: '设备'\n            },\n            {\n                name: '中微公司', code: '688012.SH',\n                marketCap: '约1500亿', sector: '刻蚀设备',\n                benefitLevel: 5,\n                reason: 'CCP刻蚀设备全球领先，<strong>5nm级别刻蚀已验证</strong>，深度绑定存储扩产+先进制程',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '设备', type: 'sector' }],\n                category: '设备'\n            },\n            {\n                name: '中芯国际', code: '688981.SH',\n                marketCap: '约4500亿', sector: '晶圆代工',\n                benefitLevel: 5,\n                reason: '大陆最先进晶圆代工厂，<strong>先进制程突破代表国产替代上限</strong>，产能利用率回暖',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '代工', type: 'sector' }],\n                category: '设备'\n            },\n            {\n                name: '拓荆科技', code: '688072.SH',\n                marketCap: '约600亿', sector: 'CVD设备',\n                benefitLevel: 4,\n                reason: '国内CVD设备龙头，<strong>PECVD/ALD/SACVD全面布局</strong>，存储+逻辑产线刚需设备',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '设备', type: 'sector' }],\n                category: '设备'\n            },\n            {\n                name: '沪硅产业', code: '688126.SH',\n                marketCap: '约500亿', sector: '硅片',\n                benefitLevel: 4,\n                reason: '300mm大硅片国产化先锋，<strong>12英寸硅片产能持续释放</strong>，受益晶圆厂扩产',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '材料', type: 'sector' }],\n                category: '材料'\n            },\n            {\n                name: '安集科技', code: '688019.SH',\n                marketCap: '约250亿', sector: 'CMP抛光液',\n                benefitLevel: 4,\n                reason: 'CMP抛光液国产替代龙头，<strong>已进入14nm产线验证</strong>，功能型湿电子化学品拓展',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '材料', type: 'sector' }],\n                category: '材料'\n            },\n            {\n                name: '长电科技', code: '600584.SH',\n                marketCap: '约500亿', sector: '封测',\n                benefitLevel: 3,\n                reason: '全球第三大封测厂，<strong>先进封装(Chiplet/2.5D)</strong>受益AI芯片封装需求',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: '封测', type: 'sector' }],\n                category: '封测'\n            },\n            {\n                name: '韦尔股份', code: '603501.SH',\n                marketCap: '约1200亿', sector: 'CIS芯片',\n                benefitLevel: 3,\n                reason: 'CIS芯片全球前三，<strong>汽车CIS受益智能化</strong>，手机CIS触底复苏',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: '设计', type: 'sector' }],\n                category: '设计'\n            },\n        ]\n    },\n    {\n        id: 'robot',\n        name: '🦾 机器人',\n        color: '#ec4899',\n        desc: '人形机器人从0到1的产业阶段，核心受益在执行器和传感器环节，确定性最高',\n        logicSteps: [\n            { title: '人形机器人催化', desc: '特斯拉Optimus/华为入局，人形机器人从概念到量产', isCore: false },\n            { title: '执行器/关节需求', desc: '单台人形机器人需40+个关节，执行器价值量占比超50%', isCore: true },\n            { title: '传感器放量', desc: '力矩传感器+视觉+触觉传感器需求随机器人量产爆发', isCore: true },\n            { title: '丝杠/减速器扩产', desc: '行星滚柱丝杠+谐波减速器国产化率快速提升', isCore: true },\n            { title: '整机集成', desc: '整机厂竞争格局未定，估值高但确定性低', isCore: false },\n        ],\n        categories: ['全部', '执行器/关节', '丝杠/减速器', '传感器', '整机'],\n        stocks: [\n            {\n                name: '拓普集团', code: '601689.SH',\n                marketCap: '约800亿', sector: '执行器/底盘',\n                benefitLevel: 5,\n                reason: '特斯拉机器人执行器核心供应商，<strong>电驱关节已定点量产</strong>，汽车+机器人双主线共振',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '执行器', type: 'sector' }],\n                category: '执行器/关节'\n            },\n            {\n                name: '绿的谐波', code: '688017.SH',\n                marketCap: '约250亿', sector: '谐波减速器',\n                benefitLevel: 5,\n                reason: '国产谐波减速器龙头，<strong>市占率国内第一</strong>，人形机器人放量直接拉动需求',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '减速器', type: 'sector' }],\n                category: '丝杠/减速器'\n            },\n            {\n                name: '贝斯特', code: '300580.SZ',\n                marketCap: '约100亿', sector: '行星滚柱丝杠',\n                benefitLevel: 4,\n                reason: '行星滚柱丝杠国产化先行者，<strong>人形机器人线性关节核心部件</strong>，产能快速扩张',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '丝杠', type: 'sector' }],\n                category: '丝杠/减速器'\n            },\n            {\n                name: '五洲新春', code: '603667.SH',\n                marketCap: '约100亿', sector: '轴承/丝杠',\n                benefitLevel: 4,\n                reason: '轴承+滚柱丝杠双线布局，<strong>已进入机器人供应链验证</strong>，产品线覆盖关节核心部件',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '丝杠', type: 'sector' }],\n                category: '丝杠/减速器'\n            },\n            {\n                name: '柯力传感', code: '603662.SH',\n                marketCap: '约120亿', sector: '力矩传感器',\n                benefitLevel: 4,\n                reason: '称重传感器龙头转型机器人传感器，<strong>六维力矩传感器已送样</strong>，人形机器人触觉感知核心',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '传感器', type: 'sector' }],\n                category: '传感器'\n            },\n            {\n                name: '奥比中光', code: '688322.SH',\n                marketCap: '约150亿', sector: '3D视觉',\n                benefitLevel: 3,\n                reason: '3D视觉感知龙头，<strong>机器人视觉导航+避障核心供应商</strong>，技术壁垒高',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: '视觉', type: 'sector' }],\n                category: '传感器'\n            },\n            {\n                name: '鸣志电器', code: '603728.SH',\n                marketCap: '约200亿', sector: '步进电机/驱动',\n                benefitLevel: 4,\n                reason: '控制电机龙头，<strong>空心杯电机已用于机器人手指关节</strong>，高精度运动控制核心',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '执行器', type: 'sector' }],\n                category: '执行器/关节'\n            },\n        ]\n    },\n    {\n        id: 'lowaltitude',\n        name: '✈️ 低空经济',\n        color: '#06b6d4',\n        desc: '低空经济是国家战略级新赛道，核心受益在eVTOL整机和空管系统',\n        logicSteps: [\n            { title: '政策密集催化', desc: '低空经济写入政府工作报告，各地密集出台支持政策', isCore: false },\n            { title: 'eVTOL适航取证', desc: '多款eVTOL取得适航证，商业化运营在即', isCore: true },\n            { title: '空管系统建设', desc: '低空空域管理需要全新空管系统，百亿级市场空间', isCore: true },\n            { title: '基础设施配套', desc: '起降场/充电桩/通信网络等配套建设启动', isCore: false },\n            { title: '运营服务', desc: '低空物流/文旅/通勤等运营场景逐步落地', isCore: false },\n        ],\n        categories: ['全部', 'eVTOL整机', '空管系统', '核心零部件', '基础设施'],\n        stocks: [\n            {\n                name: '亿航智能', code: 'EH.US',\n                marketCap: '约150亿RMB', sector: 'eVTOL整机',\n                benefitLevel: 5,\n                reason: '全球首个eVTOL适航取证企业，<strong>EH216-S已获TC/PC/AC三证</strong>，商业化进度全球领先',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: 'eVTOL', type: 'sector' }],\n                category: 'eVTOL整机'\n            },\n            {\n                name: '万丰奥威', code: '002085.SZ',\n                marketCap: '约300亿', sector: 'eVTOL整机',\n                benefitLevel: 5,\n                reason: '万丰飞机旗下eVTOL项目推进中，<strong>通航飞机已有量产基础</strong>，eVTOL研发进度靠前',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: 'eVTOL', type: 'sector' }],\n                category: 'eVTOL整机'\n            },\n            {\n                name: '莱斯信息', code: '688631.SH',\n                marketCap: '约100亿', sector: '空管系统',\n                benefitLevel: 5,\n                reason: '民航空管系统龙头，<strong>低空空管系统核心供应商</strong>，稀缺的空管系统标的',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '空管', type: 'sector' }],\n                category: '空管系统'\n            },\n            {\n                name: '四川九洲', code: '000801.SZ',\n                marketCap: '约100亿', sector: '空管设备',\n                benefitLevel: 4,\n                reason: '军民用空管设备供应商，<strong>低空监视/通信设备已有布局</strong>，受益低空基建',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '空管', type: 'sector' }],\n                category: '空管系统'\n            },\n            {\n                name: '纵横股份', code: '688070.SH',\n                marketCap: '约60亿', sector: '工业无人机',\n                benefitLevel: 4,\n                reason: '工业无人机龙头，<strong>大鹏系列垂直起降固定翼</strong>，低空巡逻/测绘核心装备',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '无人机', type: 'sector' }],\n                category: 'eVTOL整机'\n            },\n            {\n                name: '中信海直', code: '000099.SZ',\n                marketCap: '约100亿', sector: '通航运营',\n                benefitLevel: 3,\n                reason: '通用航空运营龙头，<strong>海上石油+低空游览+应急救援</strong>，低空运营稀缺标的',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: '运营', type: 'sector' }],\n                category: '基础设施'\n            },\n            {\n                name: '卧龙电驱', code: '600580.SH',\n                marketCap: '约200亿', sector: '电驱系统',\n                benefitLevel: 4,\n                reason: '电机驱动龙头，<strong>eVTOL电驱系统已与多家合作</strong>，航空电驱从0到1突破',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '电驱动', type: 'sector' }],\n                category: '核心零部件'\n            },\n        ]\n    },\n    {\n        id: 'huawei',\n        name: '📱 华为产业链',\n        color: '#ef4444',\n        desc: '华为在芯片/手机/汽车/算力全链突破，核心受益在华为深度绑定的供应链企业',\n        logicSteps: [\n            { title: '华为技术突破', desc: '麒麟芯片回归+鸿蒙生态+智驾方案全面突破', isCore: false },\n            { title: '手机链复苏', desc: 'Mate/Pura系列热销，高端市占率回升', isCore: true },\n            { title: '华为汽车放量', desc: '问界/智界/享界销量攀升，智驾方案外溢', isCore: true },\n            { title: '鸿蒙生态扩张', desc: '鸿蒙NEXT原生应用生态加速构建', isCore: true },\n            { title: '华为算力', desc: '昇腾AI芯片+鲲鹏服务器国产算力生态', isCore: true },\n        ],\n        categories: ['全部', '手机链', '汽车链', '鸿蒙生态', '华为算力'],\n        stocks: [\n            {\n                name: '光弘科技', code: '300735.SZ',\n                marketCap: '约150亿', sector: 'EMS代工',\n                benefitLevel: 5,\n                reason: '华为手机核心代工厂，<strong>Mate/Pura系列最大EMS供应商</strong>，华为手机复苏最直接受益',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '手机链', type: 'sector' }],\n                category: '手机链'\n            },\n            {\n                name: '欧菲光', code: '002456.SZ',\n                marketCap: '约250亿', sector: '摄像头模组',\n                benefitLevel: 4,\n                reason: '华为手机摄像头模组核心供应商，<strong>旗舰机CIS模组主供</strong>，华为回归带来量价齐升',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '手机链', type: 'sector' }],\n                category: '手机链'\n            },\n            {\n                name: '赛力斯', code: '601127.SH',\n                marketCap: '约1500亿', sector: '华为汽车整车',\n                benefitLevel: 5,\n                reason: '问界品牌合作方，<strong>华为智选车模式最成功案例</strong>，M7/M9爆款验证模式可行性',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '汽车链', type: 'sector' }],\n                category: '汽车链'\n            },\n            {\n                name: '江淮汽车', code: '600418.SH',\n                marketCap: '约500亿', sector: '华为汽车整车',\n                benefitLevel: 4,\n                reason: '尊界品牌合作方，<strong>百万级豪华轿车定位</strong>，华为赋能+江淮制造',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '汽车链', type: 'sector' }],\n                category: '汽车链'\n            },\n            {\n                name: '软通动力', code: '301236.SZ',\n                marketCap: '约300亿', sector: '鸿蒙生态',\n                benefitLevel: 5,\n                reason: '鸿蒙生态核心服务商，<strong>鸿蒙原生应用开发+系统集成</strong>，鸿蒙扩张最大受益IT服务商',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '鸿蒙', type: 'sector' }],\n                category: '鸿蒙生态'\n            },\n            {\n                name: '润和软件', code: '300339.SZ',\n                marketCap: '约250亿', sector: '鸿蒙生态',\n                benefitLevel: 4,\n                reason: 'OpenHarmony发起单位之一，<strong>鸿蒙金融/教育/安防行业发行版</strong>，生态建设深度参与者',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '鸿蒙', type: 'sector' }],\n                category: '鸿蒙生态'\n            },\n            {\n                name: '神州数码', code: '000034.SZ',\n                marketCap: '约250亿', sector: '华为算力',\n                benefitLevel: 4,\n                reason: '昇腾AI服务器核心分销商，<strong>鲲鹏+昇腾双生态布局</strong>，国产算力替代渠道核心',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '华为算力', type: 'sector' }],\n                category: '华为算力'\n            },\n            {\n                name: '华丰科技', code: '688100.SH',\n                marketCap: '约80亿', sector: '连接器',\n                benefitLevel: 4,\n                reason: '华为高速连接器核心供应商，<strong>950/960系列服务器连接器主供</strong>，算力+汽车双受益',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '连接器', type: 'sector' }],\n                category: '华为算力'\n            },\n        ]\n    },\n    {\n        id: 'solar',\n        name: '☀️ 光伏储能',\n        color: '#f97316',\n        desc: '光伏行业经历产能出清后，核心受益在技术领先的一体化龙头和储能环节',\n        logicSteps: [\n            { title: '光伏装机持续增长', desc: '全球装机量保持30%+增速，但产能严重过剩', isCore: false },\n            { title: '产能出清', desc: '二三线产能退出，行业集中度提升，龙头份额扩大', isCore: true },\n            { title: '技术迭代', desc: 'TOPCon→HJT→BC/钙钛矿，新技术带来超额利润', isCore: true },\n            { title: '储能爆发', desc: '光伏配储刚需+电网侧储能放量，储能增速远超光伏', isCore: true },\n            { title: '出海加速', desc: '中东/非洲/南美新兴市场需求爆发，出海企业受益', isCore: false },\n        ],\n        categories: ['全部', '一体化龙头', '新技术', '储能', '辅材'],\n        stocks: [\n            {\n                name: '阳光电源', code: '300274.SZ',\n                marketCap: '约1800亿', sector: '逆变器+储能',\n                benefitLevel: 5,\n                reason: '逆变器全球龙头+储能系统集成龙头，<strong>光储双主线核心标的</strong>，品牌+渠道壁垒最高',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '光储一体', type: 'sector' }],\n                category: '储能'\n            },\n            {\n                name: '隆基绿能', code: '601012.SH',\n                marketCap: '约1500亿', sector: '硅片+组件',\n                benefitLevel: 4,\n                reason: '光伏一体化龙头，<strong>HPBC2.0技术引领行业</strong>，产能出清后份额有望进一步提升',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '一体化', type: 'sector' }, { text: '短期承压', type: 'risk' }],\n                category: '一体化龙头'\n            },\n            {\n                name: '晶科能源', code: '688223.SH',\n                marketCap: '约800亿', sector: '组件',\n                benefitLevel: 4,\n                reason: 'N型TOPCon组件出货全球第一，<strong>N型技术红利+出海优势</strong>，沙特建厂布局中东',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: 'N型龙头', type: 'sector' }],\n                category: '新技术'\n            },\n            {\n                name: '德业股份', code: '605117.SH',\n                marketCap: '约600亿', sector: '储能逆变器',\n                benefitLevel: 5,\n                reason: '户储逆变器龙头，<strong>南非/巴西等新兴市场爆发</strong>，毛利率行业最高，业绩弹性大',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '储能', type: 'sector' }],\n                category: '储能'\n            },\n            {\n                name: '福莱特', code: '601865.SH',\n                marketCap: '约500亿', sector: '光伏玻璃',\n                benefitLevel: 3,\n                reason: '光伏玻璃双寡头之一，<strong>双玻渗透率提升+窑炉领先</strong>，产能出清受益集中度提升',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: '辅材', type: 'sector' }],\n                category: '辅材'\n            },\n            {\n                name: '派能科技', code: '688063.SH',\n                marketCap: '约100亿', sector: '储能电池',\n                benefitLevel: 3,\n                reason: '户储电池龙头，<strong>磷酸铁锂电芯+系统集成</strong>，海外户储去库存接近尾声',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: '储能电池', type: 'sector' }, { text: '库存周期', type: 'risk' }],\n                category: '储能'\n            },\n        ]\n    },\n    {\n        id: 'biotech',\n        name: '💊 创新药/医疗器械',\n        color: '#10b981',\n        desc: '创新药出海+医保谈判温和+医疗器械国产替代，核心受益在创新药和高端器械',\n        logicSteps: [\n            { title: '创新药出海突破', desc: '国产创新药FDA获批数量增加，License-out交易频发', isCore: true },\n            { title: '医保谈判温和', desc: '创新药医保谈判降幅收窄，支持创新导向明确', isCore: false },\n            { title: '医疗器械国产替代', desc: '高端医疗设备/高值耗材国产化率快速提升', isCore: true },\n            { title: 'GLP-1减肥药', desc: '司美格鲁肽/替尔泊肽引爆全球减肥药市场', isCore: true },\n            { title: 'CXO回暖', desc: '海外投融资回暖，CXO订单逐步恢复', isCore: false },\n        ],\n        categories: ['全部', '创新药', 'GLP-1', '医疗器械', 'CXO'],\n        stocks: [\n            {\n                name: '恒瑞医药', code: '600276.SH',\n                marketCap: '约3500亿', sector: '创新药',\n                benefitLevel: 5,\n                reason: '国产创新药绝对龙头，<strong>PD-1+ADC+自免多管线出海</strong>，创新药转型最成功的企业',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '创新药', type: 'sector' }],\n                category: '创新药'\n            },\n            {\n                name: '百济神州', code: '688235.SH',\n                marketCap: '约2500亿', sector: '创新药',\n                benefitLevel: 5,\n                reason: '全球化创新药企，<strong>泽布替尼全球销售额破百亿</strong>，中国创新药出海标杆',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '创新药', type: 'sector' }],\n                category: '创新药'\n            },\n            {\n                name: '博瑞医药', code: '688166.SH',\n                marketCap: '约150亿', sector: 'GLP-1',\n                benefitLevel: 4,\n                reason: 'BGM0504(GLP-1/GIP双靶点)临床进度靠前，<strong>司美格鲁肽/替尔泊肽仿制药布局</strong>',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: 'GLP-1', type: 'sector' }],\n                category: 'GLP-1'\n            },\n            {\n                name: '药明康德', code: '603259.SH',\n                marketCap: '约1500亿', sector: 'CXO',\n                benefitLevel: 3,\n                reason: '全球CXO龙头，<strong>海外法案风险仍存但影响可控</strong>，订单回暖趋势明确',\n                tags: [{ text: '间接受益', type: 'benefit' }, { text: 'CXO', type: 'sector' }, { text: '法案风险', type: 'risk' }],\n                category: 'CXO'\n            },\n            {\n                name: '迈瑞医疗', code: '300760.SZ',\n                marketCap: '约3500亿', sector: '医疗器械',\n                benefitLevel: 5,\n                reason: '医疗器械绝对龙头，<strong>生命信息+IVD+影像三线并进</strong>，海外拓展+国产替代双重受益',\n                tags: [{ text: '核心受益', type: 'benefit' }, { text: '医疗器械', type: 'sector' }],\n                category: '医疗器械'\n            },\n            {\n                name: '联影医疗', code: '688271.SH',\n                marketCap: '约1200亿', sector: '高端影像',\n                benefitLevel: 4,\n                reason: '高端医学影像设备龙头，<strong>MR/CT/PET-CT国产替代先锋</strong>，3.0T MR已实现对进口替代',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '影像设备', type: 'sector' }],\n                category: '医疗器械'\n            },\n            {\n                name: '惠泰医疗', code: '688617.SH',\n                marketCap: '约300亿', sector: '电生理/外周',\n                benefitLevel: 4,\n                reason: '电生理国产龙头，<strong>三维标测系统+消融导管</strong>，国产电生理从0到1突破的核心标的',\n                tags: [{ text: '高受益', type: 'benefit' }, { text: '高值耗材', type: 'sector' }],\n                category: '医疗器械'\n            },\n        ]\n    },\n];\n\n// ========================\n// 渲染逻辑\n// ========================\nlet currentChain = 'ai';\nlet currentFilter = '全部';\nlet watchCodes = JSON.parse(localStorage.getItem('coreBenefitWatchList') || '[]');\nlet compareCodes = JSON.parse(localStorage.getItem('coreBenefitCompareList') || '[]');\n\nfunction getAllStocks() {\n    return chainData.flatMap(chain => chain.stocks.map(stock => ({ ...stock, chainId: chain.id, chainName: chain.name, chainColor: chain.color })));\n}\n\nfunction getStockScore(stock, chain) {\n    const coreStepCount = chain.logicSteps.filter(step => step.isCore).length;\n    const directBonus = stock.tags.some(tag => tag.text.includes('核心')) ? 18 : stock.tags.some(tag => tag.text.includes('高')) ? 10 : 3;\n    const riskPenalty = stock.tags.filter(tag => tag.type === 'risk').length * 6;\n    return Math.max(45, Math.min(99, stock.benefitLevel * 14 + coreStepCount * 4 + directBonus - riskPenalty));\n}\n\nfunction getSectorScore(chain) {\n    const scores = chain.stocks.map(stock => getStockScore(stock, chain));\n    const avg = scores.reduce((sum, item) => sum + item, 0) / scores.length;\n    const coreDensity = chain.stocks.filter(stock => stock.benefitLevel >= 5).length / chain.stocks.length;\n    return Math.round(avg * 0.72 + coreDensity * 28);\n}\n\nfunction normalizeName(name) {\n    return name.replace(/[^\\u4e00-\\u9fa5A-Za-z0-9]/g, '').toLowerCase();\n}\n\nfunction stripHtml(html) {\n    const div = document.createElement('div');\n    div.innerHTML = html;\n    return div.textContent || div.innerText || '';\n}\n\nfunction getStockByCode(code) {\n    return getAllStocks().find(stock => stock.code === code);\n}\n\nfunction getChainById(chainId) {\n    return chainData.find(chain => chain.id === chainId);\n}\n\nfunction getRiskText(stock) {\n    const riskTags = stock.tags.filter(tag => tag.type === 'risk').map(tag => tag.text);\n    if (riskTags.length) return riskTags.join(' / ');\n    if (stock.benefitLevel >= 5) return '核心标的常见风险：估值透支、预期过满、交易拥挤';\n    return '跟踪兑现节奏，避免只因扩散行情追高';\n}\n\nfunction getTrackingPoints(stock, chain) {\n    const sector = stock.sector;\n    return [\n        `${sector} 是否出现订单、客户认证、价格或毛利率变化`,\n        `${stock.category} 在产业链中是否仍是供给瓶颈`,\n        `${chain.name} 主线热度是否由龙头带动，而不是单日情绪扩散`,\n        `财报、公告、调研纪要能否验证：${stripHtml(stock.reason).slice(0, 34)}`\n    ];\n}\n\nfunction renderDashboard() {\n    const allStocks = getAllStocks();\n    const coreStocks = allStocks.filter(stock => stock.benefitLevel >= 5);\n    const riskStocks = allStocks.filter(stock => stock.tags.some(tag => tag.type === 'risk'));\n    const categories = new Set(allStocks.map(stock => stock.category));\n    document.getElementById('updateStamp').textContent = `本地模型库：${new Date().toLocaleDateString('zh-CN')}`;\n    document.getElementById('metricGrid').innerHTML = [\n        { label: '重点板块', value: chainData.length, desc: '覆盖 AI、新能源车、半导体、机器人等主线' },\n        { label: '候选公司', value: allStocks.length, desc: '按产业链受益位置整理，可继续扩充' },\n        { label: '核心受益', value: coreStocks.length, desc: '受益程度 5 星，优先进入深度研究' },\n        { label: '风险标签', value: riskStocks.length, desc: '含短期承压、法案、库存、变现等提示' },\n    ].map(item => `\n        <div class=\"metric\">\n            <div class=\"metric-label\">${item.label}</div>\n            <div class=\"metric-value\">${item.value}</div>\n            <div class=\"metric-desc\">${item.desc}</div>\n        </div>\n    `).join('');\n\n    const ranked = [...chainData].sort((a, b) => getSectorScore(b) - getSectorScore(a));\n    document.getElementById('sectorRank').innerHTML = ranked.map(chain => {\n        const score = getSectorScore(chain);\n        return `\n            <div class=\"rank-item\" onclick=\"switchChain('${chain.id}')\">\n                <div class=\"rank-name\">${chain.name}</div>\n                <div class=\"rank-bar\"><div class=\"rank-fill\" style=\"width:${score}%; background:${chain.color};\"></div></div>\n                <div class=\"rank-score\">${score}</div>\n            </div>\n        `;\n    }).join('');\n\n    renderMatrix();\n    renderWatchList();\n    renderCompare();\n}\n\nfunction renderMatrix() {\n    const mode = document.getElementById('riskMode')?.value || 'balanced';\n    const query = normalizeName(document.getElementById('globalSearch')?.value || '');\n    let rows = getAllStocks().map(stock => {\n        const chain = chainData.find(item => item.id === stock.chainId);\n        let score = getStockScore(stock, chain);\n        if (mode === 'aggressive' && stock.benefitLevel >= 5) score += 4;\n        if (mode === 'defensive' && stock.tags.some(tag => tag.type === 'risk')) score -= 10;\n        return { ...stock, score: Math.max(0, Math.min(100, score)) };\n    });\n    if (query) {\n        rows = rows.filter(stock => normalizeName(`${stock.name}${stock.code}${stock.sector}${stock.category}${stock.chainName}${stock.reason}`).includes(query));\n    }\n    rows = rows.sort((a, b) => b.score - a.score).slice(0, 12);\n    document.getElementById('matrixBody').innerHTML = rows.map(stock => `\n        <tr onclick=\"switchChain('${stock.chainId}')\" style=\"cursor:pointer;\">\n            <td style=\"color:var(--text-primary); font-weight:600;\">${stock.name}<br><span style=\"color:var(--text-muted); font-weight:400;\">${stock.code}</span></td>\n            <td>${stock.chainName}</td>\n            <td>${stock.sector}</td>\n            <td><span class=\"score-pill\">${stock.score}</span></td>\n            <td>${stock.tags.map(tag => tag.text).join(' / ')}</td>\n        </tr>\n    `).join('') || `<tr><td colspan=\"5\">没有匹配结果</td></tr>`;\n}\n\nfunction renderWatchList() {\n    const allStocks = getAllStocks();\n    const watched = watchCodes.map(code => allStocks.find(stock => stock.code === code)).filter(Boolean);\n    const container = document.getElementById('watchList');\n    if (!watched.length) {\n        container.innerHTML = '<div class=\"watch-empty\">观察清单为空</div>';\n        return;\n    }\n    container.innerHTML = watched.map(stock => `\n        <div class=\"watch-card\" onclick=\"openStockDetail('${stock.code}')\" style=\"cursor:pointer;\">\n            <button onclick=\"event.stopPropagation(); removeWatch('${stock.code}')\" title=\"移除\">×</button>\n            <strong>${stock.name}</strong>\n            <span>${stock.code}｜${stock.chainName}｜${stock.sector}</span>\n        </div>\n    `).join('');\n}\n\nfunction toggleWatch(code) {\n    if (watchCodes.includes(code)) {\n        watchCodes = watchCodes.filter(item => item !== code);\n    } else {\n        watchCodes = [...watchCodes, code];\n    }\n    localStorage.setItem('coreBenefitWatchList', JSON.stringify(watchCodes));\n    renderWatchList();\n    renderContent();\n}\n\nfunction removeWatch(code) {\n    watchCodes = watchCodes.filter(item => item !== code);\n    localStorage.setItem('coreBenefitWatchList', JSON.stringify(watchCodes));\n    renderWatchList();\n    renderContent();\n}\n\nfunction addCompare(code) {\n    if (compareCodes.includes(code)) {\n        compareCodes = compareCodes.filter(item => item !== code);\n    } else {\n        compareCodes = [...compareCodes, code].slice(-3);\n    }\n    localStorage.setItem('coreBenefitCompareList', JSON.stringify(compareCodes));\n    renderCompare();\n    renderContent();\n}\n\nfunction removeCompare(code) {\n    compareCodes = compareCodes.filter(item => item !== code);\n    localStorage.setItem('coreBenefitCompareList', JSON.stringify(compareCodes));\n    renderCompare();\n    renderContent();\n}\n\nfunction renderCompare() {\n    const stocks = compareCodes.map(getStockByCode).filter(Boolean);\n    const slots = document.getElementById('compareSlots');\n    if (slots) {\n        slots.innerHTML = [0, 1, 2].map(index => {\n            const stock = stocks[index];\n            if (!stock) return `<div class=\"compare-slot\">等待加入<br>最多对比 3 只</div>`;\n            return `\n                <div class=\"compare-slot filled\">\n                    <button onclick=\"event.stopPropagation(); removeCompare('${stock.code}')\" title=\"移除\" style=\"float:right;\">×</button>\n                    <strong>${stock.name}</strong>\n                    ${stock.code}<br>${stock.chainName}\n                </div>\n            `;\n        }).join('');\n    }\n    const body = document.getElementById('compareBody');\n    if (!body) return;\n    if (!stocks.length) {\n        body.innerHTML = `<tr><td colspan=\"5\">还没有加入对比的公司</td></tr>`;\n        return;\n    }\n    body.innerHTML = stocks.map(stock => {\n        const chain = getChainById(stock.chainId);\n        return `\n            <tr onclick=\"openStockDetail('${stock.code}')\" style=\"cursor:pointer;\">\n                <td style=\"color:var(--text-primary); font-weight:600;\">${stock.name}<br><span style=\"color:var(--text-muted); font-weight:400;\">${stock.code}</span></td>\n                <td>${stripHtml(stock.reason)}</td>\n                <td>${stock.category}｜${stock.sector}</td>\n                <td><span class=\"score-pill\">${getStockScore(stock, chain)}</span></td>\n                <td>${getRiskText(stock)}</td>\n            </tr>\n        `;\n    }).join('');\n}\n\nfunction renderTabs() {\n    const container = document.getElementById('chainTabs');\n    container.innerHTML = chainData.map(chain => \n        `<div class=\"chain-tab ${chain.id === currentChain ? 'active' : ''}\" onclick=\"switchChain('${chain.id}')\" style=\"${chain.id === currentChain ? `border-color: ${chain.color}; background: ${chain.color}15` : ''}\">\n            ${chain.name}\n        </div>`\n    ).join('');\n}\n\nfunction switchChain(chainId) {\n    currentChain = chainId;\n    currentFilter = '全部';\n    renderTabs();\n    renderContent();\n    renderMatrix();\n    updateSimulator();\n}\n\nfunction renderContent() {\n    const chain = chainData.find(c => c.id === currentChain);\n    if (!chain) return;\n\n    const query = normalizeName(document.getElementById('globalSearch')?.value || '');\n    const filteredByCategory = currentFilter === '全部' \n        ? chain.stocks \n        : chain.stocks.filter(s => s.category === currentFilter);\n    const filteredStocks = query\n        ? filteredByCategory.filter(s => normalizeName(`${s.name}${s.code}${s.sector}${s.category}${s.reason}`).includes(query))\n        : filteredByCategory;\n\n    const container = document.getElementById('mainContent');\n    container.innerHTML = `\n        <div class=\"chain-detail active\">\n            <div class=\"chain-header\">\n                <h2 style=\"color: ${chain.color}\">${chain.name}</h2>\n                <div class=\"chain-desc\">${chain.desc}</div>\n            </div>\n\n            <!-- 受益逻辑推演 -->\n            <div class=\"logic-section\">\n                <div class=\"section-title\"><span class=\"icon\">🔗</span> 受益逻辑推演（舟哥策略核心）</div>\n                <div class=\"logic-flow-horizontal\">\n                    ${chain.logicSteps.map((step, i) => `\n                        <div class=\"logic-step ${step.isCore ? 'core-benefit' : ''}\">\n                            <div class=\"step-num\">${i + 1}</div>\n                            <div class=\"step-title\">${step.title}</div>\n                            <div class=\"step-desc\">${step.desc}</div>\n                            ${step.isCore ? '<div class=\"core-tag\">⭐ 核心受益环节</div>' : ''}\n                        </div>\n                        ${i < chain.logicSteps.length - 1 ? '<div class=\"logic-connector\">→</div>' : ''}\n                    `).join('')}\n                </div>\n            </div>\n\n            <!-- 分类筛选 -->\n            <div class=\"category-filter\">\n                ${chain.categories.map(cat => `\n                    <div class=\"filter-btn ${currentFilter === cat ? 'active' : ''}\" onclick=\"filterStocks('${cat}')\">${cat}</div>\n                `).join('')}\n            </div>\n\n            <!-- 核心受益个股 -->\n            <div class=\"section-title\"><span class=\"icon\">⭐</span> 核心受益个股（共${filteredStocks.length}只）</div>\n            <div class=\"stocks-grid\">\n                ${filteredStocks.map(stock => `\n                    <div class=\"stock-card ${stock.benefitLevel >= 5 ? 'core' : ''}\">\n                        <div class=\"stock-topline\">\n                            <div>\n                                <div class=\"stock-name\">${stock.name}</div>\n                                <div class=\"stock-code\">${stock.code}</div>\n                            </div>\n                            <div class=\"card-actions\">\n                                <button class=\"mini-btn ${watchCodes.includes(stock.code) ? 'active' : ''}\" onclick=\"toggleWatch('${stock.code}')\" title=\"加入观察清单\">★</button>\n                                <button class=\"mini-btn ${compareCodes.includes(stock.code) ? 'active' : ''}\" onclick=\"addCompare('${stock.code}')\" title=\"加入横向对比\">⇄</button>\n                                <button class=\"mini-btn detail-btn\" onclick=\"openStockDetail('${stock.code}')\" title=\"查看深度分析\">详情</button>\n                            </div>\n                        </div>\n                        <div class=\"benefit-level\">\n                            <span class=\"label\">受益程度：</span>\n                            ${[1,2,3,4,5].map(i => `<div class=\"benefit-dot ${i <= stock.benefitLevel ? 'active' : ''}\"></div>`).join('')}\n                        </div>\n                        <div class=\"stock-score-row\">\n                            <div class=\"stock-score\"><span>核心分</span><strong>${getStockScore(stock, chain)}</strong></div>\n                            <div class=\"stock-score\"><span>环节</span><strong>${stock.category}</strong></div>\n                            <div class=\"stock-score\"><span>风险</span><strong>${stock.tags.some(tag => tag.type === 'risk') ? '需跟踪' : '常规'}</strong></div>\n                        </div>\n                        <div class=\"stock-meta\">\n                            <div class=\"stock-meta-item\">市值 <span>${stock.marketCap}</span></div>\n                            <div class=\"stock-meta-item\">行业 <span>${stock.sector}</span></div>\n                        </div>\n                        <div class=\"stock-reason\">${stock.reason}</div>\n                        <div class=\"stock-tags\">\n                            ${stock.tags.map(tag => `<span class=\"stock-tag ${tag.type}\">${tag.text}</span>`).join('')}\n                        </div>\n                    </div>\n                `).join('')}\n            </div>\n            <div class=\"risk-panel\">\n                <div class=\"risk-item\"><strong>核心验证</strong><p>跟踪该板块核心环节是否出现订单、价格、产能利用率、毛利率任一维度改善。</p></div>\n                <div class=\"risk-item\"><strong>失效信号</strong><p>如果题材热度仍在但核心公司业绩不动，说明受益链条可能停在概念端。</p></div>\n                <div class=\"risk-item\"><strong>仓位纪律</strong><p>优先把 5 星核心公司做深，再用 3-4 星公司观察扩散行情，不倒置主次。</p></div>\n            </div>\n        </div>\n    `;\n}\n\nfunction filterStocks(category) {\n    currentFilter = category;\n    renderContent();\n}\n\nfunction openStockDetail(code) {\n    const stock = getStockByCode(code);\n    if (!stock) return;\n    const chain = getChainById(stock.chainId);\n    const score = getStockScore(stock, chain);\n    const coreSteps = chain.logicSteps.filter(step => step.isCore);\n    document.getElementById('detailDialog').innerHTML = `\n        <div class=\"detail-head\">\n            <div>\n                <h2>${stock.name}</h2>\n                <div class=\"stock-code\">${stock.code}｜${stock.chainName}｜${stock.sector}</div>\n                <div class=\"stock-tags\" style=\"margin-top:10px;\">\n                    ${stock.tags.map(tag => `<span class=\"stock-tag ${tag.type}\">${tag.text}</span>`).join('')}\n                </div>\n            </div>\n            <button class=\"close-btn\" onclick=\"closeStockDetail()\">×</button>\n        </div>\n        <div class=\"detail-body\">\n            <div class=\"metric-grid\" style=\"margin-bottom:14px;\">\n                <div class=\"metric\"><div class=\"metric-label\">核心分</div><div class=\"metric-value\">${score}</div><div class=\"metric-desc\">综合受益程度、核心环节、风险标签</div></div>\n                <div class=\"metric\"><div class=\"metric-label\">受益等级</div><div class=\"metric-value\">${stock.benefitLevel} 星</div><div class=\"metric-desc\">${stock.benefitLevel >= 5 ? '核心观察' : stock.benefitLevel >= 4 ? '重点跟踪' : '扩散观察'}</div></div>\n                <div class=\"metric\"><div class=\"metric-label\">产业环节</div><div class=\"metric-value\" style=\"font-size:18px;\">${stock.category}</div><div class=\"metric-desc\">${stock.sector}</div></div>\n                <div class=\"metric\"><div class=\"metric-label\">市值区间</div><div class=\"metric-value\" style=\"font-size:18px;\">${stock.marketCap}</div><div class=\"metric-desc\">仅作分层参考</div></div>\n            </div>\n            <div class=\"detail-grid\">\n                <section class=\"detail-section\">\n                    <h3>核心受益逻辑</h3>\n                    <p>${stock.reason}</p>\n                </section>\n                <section class=\"detail-section\">\n                    <h3>产业链位置</h3>\n                    <ul>${chain.logicSteps.map(step => `<li>${step.isCore ? '<strong style=\"color:var(--accent-gold);\">核心：</strong>' : ''}${step.title}：${step.desc}</li>`).join('')}</ul>\n                </section>\n                <section class=\"detail-section\">\n                    <h3>跟踪指标</h3>\n                    <ul>${getTrackingPoints(stock, chain).map(item => `<li>${item}</li>`).join('')}</ul>\n                </section>\n                <section class=\"detail-section\">\n                    <h3>风险与失效条件</h3>\n                    <ul>\n                        <li>${getRiskText(stock)}</li>\n                        <li>若${coreSteps.map(step => step.title).join('、') || stock.category}没有持续兑现，题材权重下降。</li>\n                        <li>若上涨主要来自边缘扩散而非核心公司走强，降低追涨优先级。</li>\n                    </ul>\n                </section>\n                <section class=\"detail-section\">\n                    <h3>复盘问题</h3>\n                    <ul>\n                        <li>这家公司收入是否直接吃到本轮题材增量？</li>\n                        <li>它是供给瓶颈、核心零部件，还是普通配套？</li>\n                        <li>下一次能验证逻辑的公告、财报或行业数据是什么？</li>\n                    </ul>\n                </section>\n                <section class=\"detail-section\">\n                    <h3>操作纪律</h3>\n                    <p>先把它放入观察清单或对比池，和同板块核心标的横向比较。只有当逻辑、业绩、走势和风险边界同时过关时，再考虑进入交易计划。</p>\n                </section>\n            </div>\n        </div>\n    `;\n    document.getElementById('detailModal').classList.add('open');\n}\n\nfunction closeStockDetail() {\n    document.getElementById('detailModal').classList.remove('open');\n}\n\nfunction closeDetailFromBackdrop(event) {\n    if (event.target.id === 'detailModal') closeStockDetail();\n}\n\nfunction buildThemeLogic() {\n    const theme = document.getElementById('themeInput').value.trim() || '新题材';\n    const event = document.getElementById('eventInput').value.trim() || '催化事件出现';\n    const demand = document.getElementById('demandInput').value.trim() || '真实需求增加';\n    const bottleneck = document.getElementById('bottleneckInput').value.trim() || '供给瓶颈环节';\n    document.getElementById('builderResult').innerHTML = `\n        <strong>${theme} 推演链：</strong><br>\n        ${event} → ${demand} → 资源消耗或产能约束上升 → <span style=\"color:var(--accent-gold); font-weight:700;\">${bottleneck}</span> 成为核心受益环节。<br>\n        筛选条件：收入直接相关、客户验证明确、产能或技术有壁垒、财报能体现兑现节奏、估值没有完全透支。\n    `;\n}\n\nfunction updateSimulator() {\n    const ids = ['simPolicy', 'simDemand', 'simBottleneck', 'simEarnings', 'simCrowd'];\n    ids.forEach(id => {\n        const input = document.getElementById(id);\n        const label = document.getElementById(`${id}Val`);\n        if (input && label) label.textContent = input.value;\n    });\n    const chain = getChainById(currentChain);\n    const policy = Number(document.getElementById('simPolicy')?.value || 0);\n    const demand = Number(document.getElementById('simDemand')?.value || 0);\n    const bottleneck = Number(document.getElementById('simBottleneck')?.value || 0);\n    const earnings = Number(document.getElementById('simEarnings')?.value || 0);\n    const crowd = Number(document.getElementById('simCrowd')?.value || 0);\n    const base = chain ? getSectorScore(chain) : 70;\n    const score = Math.round(base * 0.28 + policy * 0.14 + demand * 0.22 + bottleneck * 0.2 + earnings * 0.22 - crowd * 0.16);\n    const bounded = Math.max(0, Math.min(100, score));\n    const result = bounded >= 78 ? '强主线：优先研究核心受益环节和龙头。' : bounded >= 62 ? '可跟踪：等待业绩或走势进一步确认。' : '偏弱：先观察，不急于扩大研究范围。';\n    const box = document.getElementById('simResult');\n    if (box) {\n        box.innerHTML = `\n            <div class=\"decision-score\"><strong>${bounded}</strong><span>题材强度分</span></div>\n            <div class=\"decision-text\">${chain?.name || '当前板块'}：${result}<br>拥挤程度越高，分数会被主动扣减，避免只看热度。</div>\n        `;\n    }\n}\n\nfunction updateBuyScore() {\n    const ids = ['buyLogic', 'buyProof', 'buyValue', 'buyTrend', 'buyRisk'];\n    ids.forEach(id => {\n        const input = document.getElementById(id);\n        const label = document.getElementById(`${id}Val`);\n        if (input && label) label.textContent = input.value;\n    });\n    const logic = Number(document.getElementById('buyLogic')?.value || 0);\n    const proof = Number(document.getElementById('buyProof')?.value || 0);\n    const value = Number(document.getElementById('buyValue')?.value || 0);\n    const trend = Number(document.getElementById('buyTrend')?.value || 0);\n    const risk = Number(document.getElementById('buyRisk')?.value || 0);\n    const score = Math.round(logic * 0.28 + proof * 0.24 + value * 0.16 + trend * 0.16 + risk * 0.16);\n    const text = score >= 80 ? '可以进入重点交易计划，但仍需明确买点和止损。' : score >= 65 ? '适合继续观察，等待更强验证或更好的价格。' : '分数不足，先不把它放进交易计划。';\n    const box = document.getElementById('buyResult');\n    if (box) {\n        box.innerHTML = `\n            <div class=\"decision-score\"><strong>${score}</strong><span>买前纪律分</span></div>\n            <div class=\"decision-text\">${text}<br>这不是买卖建议，而是帮你把冲动拆成可检查条件。</div>\n        `;\n    }\n}\n\nfunction calculatePosition() {\n    const capital = Number(document.getElementById('capitalInput')?.value || 0);\n    const riskPct = Number(document.getElementById('riskInput')?.value || 0);\n    const entry = Number(document.getElementById('entryInput')?.value || 0);\n    const stop = Number(document.getElementById('stopInput')?.value || 0);\n    const riskAmount = capital * riskPct / 100;\n    const singleRisk = Math.max(0, entry - stop);\n    const shares = singleRisk > 0 ? Math.floor(riskAmount / singleRisk / 100) * 100 : 0;\n    const position = shares * entry;\n    const positionPct = capital > 0 ? position / capital * 100 : 0;\n    const container = document.getElementById('positionResult');\n    container.innerHTML = `\n        <div class=\"result-cell\"><span>最大亏损</span><strong>${riskAmount.toFixed(0)}</strong></div>\n        <div class=\"result-cell\"><span>建议股数</span><strong>${shares}</strong></div>\n        <div class=\"result-cell\"><span>占用仓位</span><strong>${positionPct.toFixed(1)}%</strong></div>\n    `;\n}\n\nfunction updateSignals() {\n    const checks = [...document.querySelectorAll('#signalList input')];\n    const done = checks.filter(input => input.checked).length;\n    const score = Math.round(done / checks.length * 100);\n    const text = done >= 4 ? '验证较充分，可以进入深度研究或复盘候选。' : done >= 2 ? '已有部分信号，继续等核心环节确认。' : '信号偏少，暂时更像题材热度观察。';\n    document.getElementById('signalResult').innerHTML = `\n        <div class=\"decision-score\"><strong>${score}</strong><span>验证完成度</span></div>\n        <div class=\"decision-text\">${text}</div>\n    `;\n}\n\nfunction resetWorkspace() {\n    currentChain = 'ai';\n    currentFilter = '全部';\n    watchCodes = [];\n    compareCodes = [];\n    localStorage.removeItem('coreBenefitWatchList');\n    localStorage.removeItem('coreBenefitCompareList');\n    document.getElementById('globalSearch').value = '';\n    document.getElementById('riskMode').value = 'balanced';\n    renderTabs();\n    renderDashboard();\n    renderContent();\n    renderCompare();\n    updateSimulator();\n    updateBuyScore();\n    calculatePosition();\n    updateSignals();\n}\n\ndocument.getElementById('globalSearch').addEventListener('input', () => {\n    renderMatrix();\n    renderContent();\n});\n\ndocument.getElementById('riskMode').addEventListener('change', renderMatrix);\n['simPolicy', 'simDemand', 'simBottleneck', 'simEarnings', 'simCrowd'].forEach(id => {\n    document.getElementById(id).addEventListener('input', updateSimulator);\n});\n['buyLogic', 'buyProof', 'buyValue', 'buyTrend', 'buyRisk'].forEach(id => {\n    document.getElementById(id).addEventListener('input', updateBuyScore);\n});\n['capitalInput', 'riskInput', 'entryInput', 'stopInput'].forEach(id => {\n    document.getElementById(id).addEventListener('input', calculatePosition);\n});\ndocument.querySelectorAll('#signalList input').forEach(input => input.addEventListener('change', updateSignals));\ndocument.addEventListener('keydown', event => {\n    if (event.key === 'Escape') closeStockDetail();\n});\n\n// 初始化渲染\nrenderTabs();\nrenderDashboard();\nrenderContent();\nrenderCompare();\nupdateSimulator();\nupdateBuyScore();\ncalculatePosition();\nupdateSignals();\n</script>\n\n</body>\n</html>\n";
+const marketSnapshot = [
+  { name: '上证指数', value: '3,284.21', change: '+0.62%', turnover: '4,680亿', state: '修复' },
+  { name: '深成指', value: '10,214.37', change: '+0.91%', turnover: '5,940亿', state: '放量' },
+  { name: '创业板指', value: '2,087.44', change: '+1.18%', turnover: '2,310亿', state: '强于主板' },
+  { name: '科创50', value: '867.12', change: '+1.53%', turnover: '846亿', state: '科技领涨' },
+];
 
-export default function App() {
-  return (
-    <iframe
-      title="A股核心受益投资工作台"
-      srcDoc={investmentWorkbenchHtml}
-      style={{
-        width: '100%',
-        height: '100vh',
-        border: 0,
-        display: 'block',
-        background: '#0a0e1a',
-      }}
-    />
+const sectors = [
+  {
+    id: 'ai',
+    name: 'AI算力',
+    score: 92,
+    heat: 88,
+    fund: '+86.4亿',
+    trend: '主升',
+    verify: '订单与价格双验证',
+    color: '#38bdf8',
+    chain: ['大模型迭代', '训练/推理需求', 'GPU服务器', '光模块/PCB/液冷', '算力租赁'],
+    catalysts: ['海外云厂商资本开支上修', '国产算力替代加速', '800G/1.6T光模块放量'],
+    risks: ['一致预期过高', '海外订单波动', '上游芯片供给扰动'],
+    stocks: [
+      {
+        code: '300308.SZ',
+        name: '中际旭创',
+        role: '光模块龙头',
+        price: 178.62,
+        change: '+4.82%',
+        core: 96,
+        proof: 93,
+        valuation: 62,
+        trend: 91,
+        capital: 88,
+        mcap: '约1800亿',
+        pe: '38x',
+        revenue: '+122%',
+        margin: '31.8%',
+        roe: '22.5%',
+        logic: '800G/1.6T光模块直接承接AI算力扩张，是算力链中业绩弹性最清晰的核心环节。',
+      },
+      {
+        code: '300502.SZ',
+        name: '新易盛',
+        role: '高速光模块',
+        price: 116.41,
+        change: '+3.76%',
+        core: 92,
+        proof: 89,
+        valuation: 66,
+        trend: 87,
+        capital: 82,
+        mcap: '约800亿',
+        pe: '35x',
+        revenue: '+96%',
+        margin: '29.4%',
+        roe: '19.7%',
+        logic: '高速光模块持续放量，受益海外AI集群建设，利润弹性强于传统通信链。',
+      },
+      {
+        code: '002463.SZ',
+        name: '沪电股份',
+        role: 'AI服务器PCB',
+        price: 42.35,
+        change: '+2.18%',
+        core: 84,
+        proof: 81,
+        valuation: 70,
+        trend: 78,
+        capital: 76,
+        mcap: '约800亿',
+        pe: '31x',
+        revenue: '+48%',
+        margin: '27.1%',
+        roe: '18.1%',
+        logic: 'AI服务器带来高多层PCB价值量提升，属于算力基础设施扩张的材料型受益环节。',
+      },
+    ],
+  },
+  {
+    id: 'semi',
+    name: '半导体国产替代',
+    score: 86,
+    heat: 82,
+    fund: '+51.8亿',
+    trend: '趋势修复',
+    verify: '设备订单验证',
+    color: '#a78bfa',
+    chain: ['出口管制', '国产替代', '晶圆厂扩产', '设备/材料导入', '良率提升'],
+    catalysts: ['先进制程自主可控', '存储扩产周期', '设备国产化率提升'],
+    risks: ['估值敏感', '验证周期长', '订单节奏不均衡'],
+    stocks: [
+      {
+        code: '002371.SZ',
+        name: '北方华创',
+        role: '平台型设备',
+        price: 326.18,
+        change: '+2.44%',
+        core: 94,
+        proof: 88,
+        valuation: 58,
+        trend: 78,
+        capital: 79,
+        mcap: '约2800亿',
+        pe: '46x',
+        revenue: '+42%',
+        margin: '43.5%',
+        roe: '17.8%',
+        logic: '刻蚀、薄膜、清洗等设备平台化布局，直接受益晶圆厂扩产和国产化率提升。',
+      },
+      {
+        code: '688012.SH',
+        name: '中微公司',
+        role: '刻蚀设备',
+        price: 184.77,
+        change: '+1.96%',
+        core: 91,
+        proof: 86,
+        valuation: 60,
+        trend: 75,
+        capital: 73,
+        mcap: '约1500亿',
+        pe: '53x',
+        revenue: '+37%',
+        margin: '45.2%',
+        roe: '14.6%',
+        logic: '刻蚀设备是先进制程核心瓶颈，技术壁垒高，国产替代逻辑强。',
+      },
+      {
+        code: '688019.SH',
+        name: '安集科技',
+        role: 'CMP材料',
+        price: 157.28,
+        change: '+1.42%',
+        core: 79,
+        proof: 74,
+        valuation: 67,
+        trend: 68,
+        capital: 64,
+        mcap: '约250亿',
+        pe: '39x',
+        revenue: '+28%',
+        margin: '55.7%',
+        roe: '13.2%',
+        logic: '抛光液和功能湿电子化学品导入加速，属于材料国产替代的高壁垒环节。',
+      },
+    ],
+  },
+  {
+    id: 'robot',
+    name: '人形机器人',
+    score: 81,
+    heat: 86,
+    fund: '+38.6亿',
+    trend: '高波动上行',
+    verify: '样机到订单过渡',
+    color: '#f472b6',
+    chain: ['整机量产预期', '关节价值量提升', '减速器/丝杠', '传感器', '执行器集成'],
+    catalysts: ['头部厂商迭代加速', '执行器定点', '传感器送样验证'],
+    risks: ['量产节奏不确定', '主题交易拥挤', '短期业绩贡献有限'],
+    stocks: [
+      {
+        code: '601689.SH',
+        name: '拓普集团',
+        role: '执行器平台',
+        price: 63.51,
+        change: '+3.12%',
+        core: 88,
+        proof: 74,
+        valuation: 61,
+        trend: 80,
+        capital: 76,
+        mcap: '约800亿',
+        pe: '32x',
+        revenue: '+25%',
+        margin: '21.9%',
+        roe: '16.3%',
+        logic: '汽车零部件平台延伸到机器人执行器，若量产兑现，单机价值量弹性较大。',
+      },
+      {
+        code: '688017.SH',
+        name: '绿的谐波',
+        role: '谐波减速器',
+        price: 112.06,
+        change: '+2.77%',
+        core: 86,
+        proof: 68,
+        valuation: 52,
+        trend: 79,
+        capital: 70,
+        mcap: '约250亿',
+        pe: '68x',
+        revenue: '+18%',
+        margin: '48.1%',
+        roe: '10.5%',
+        logic: '谐波减速器是机器人关节核心零部件，产业趋势强，但估值对订单兑现敏感。',
+      },
+      {
+        code: '603662.SH',
+        name: '柯力传感',
+        role: '力传感器',
+        price: 38.95,
+        change: '+1.51%',
+        core: 76,
+        proof: 62,
+        valuation: 64,
+        trend: 71,
+        capital: 58,
+        mcap: '约120亿',
+        pe: '41x',
+        revenue: '+16%',
+        margin: '38.6%',
+        roe: '11.7%',
+        logic: '力矩和触觉传感器提升机器人感知能力，是从样机到量产需要验证的关键方向。',
+      },
+    ],
+  },
+  {
+    id: 'low',
+    name: '低空经济',
+    score: 77,
+    heat: 79,
+    fund: '+24.9亿',
+    trend: '政策驱动',
+    verify: '基建招标验证',
+    color: '#22d3ee',
+    chain: ['政策放开', '空域管理', 'eVTOL取证', '低空基建', '运营场景'],
+    catalysts: ['地方低空规划密集落地', '空管系统建设', '低空物流与文旅试点'],
+    risks: ['商业化周期长', '订单分散', '估值先于业绩'],
+    stocks: [
+      {
+        code: '688631.SH',
+        name: '莱斯信息',
+        role: '空管系统',
+        price: 79.48,
+        change: '+2.69%',
+        core: 87,
+        proof: 72,
+        valuation: 54,
+        trend: 75,
+        capital: 69,
+        mcap: '约100亿',
+        pe: '58x',
+        revenue: '+22%',
+        margin: '36.5%',
+        roe: '9.4%',
+        logic: '低空经济要商业化，空域管理和空管系统必须先行，是政策落地后的关键基建。',
+      },
+      {
+        code: '002085.SZ',
+        name: '万丰奥威',
+        role: 'eVTOL整机',
+        price: 18.37,
+        change: '+1.94%',
+        core: 80,
+        proof: 58,
+        valuation: 49,
+        trend: 78,
+        capital: 72,
+        mcap: '约300亿',
+        pe: '65x',
+        revenue: '+12%',
+        margin: '19.6%',
+        roe: '8.9%',
+        logic: '通航制造基础叠加eVTOL预期，弹性较大，但需要持续跟踪适航和订单兑现。',
+      },
+      {
+        code: '000099.SZ',
+        name: '中信海直',
+        role: '通航运营',
+        price: 19.12,
+        change: '+0.84%',
+        core: 68,
+        proof: 61,
+        valuation: 70,
+        trend: 62,
+        capital: 55,
+        mcap: '约100亿',
+        pe: '35x',
+        revenue: '+10%',
+        margin: '18.3%',
+        roe: '7.2%',
+        logic: '运营端有稀缺性，但短期更偏主题扩散，核心程度弱于空管和核心装备。',
+      },
+    ],
+  },
+  {
+    id: 'medicine',
+    name: '创新药出海',
+    score: 74,
+    heat: 66,
+    fund: '+18.3亿',
+    trend: '中期修复',
+    verify: 'License-out验证',
+    color: '#34d399',
+    chain: ['研发管线', '临床数据', '海外授权', '商业化放量', '利润兑现'],
+    catalysts: ['创新药出海交易', '医保谈判温和', 'GLP-1和ADC景气'],
+    risks: ['临床失败', '海外监管', '商业化节奏'],
+    stocks: [
+      {
+        code: '600276.SH',
+        name: '恒瑞医药',
+        role: '创新药龙头',
+        price: 48.31,
+        change: '+1.36%',
+        core: 83,
+        proof: 78,
+        valuation: 68,
+        trend: 66,
+        capital: 63,
+        mcap: '约3500亿',
+        pe: '44x',
+        revenue: '+18%',
+        margin: '86.2%',
+        roe: '13.8%',
+        logic: '创新药管线持续推进，出海和国内商业化共同驱动估值修复。',
+      },
+      {
+        code: '688235.SH',
+        name: '百济神州',
+        role: '全球化创新药',
+        price: 151.2,
+        change: '+2.11%',
+        core: 86,
+        proof: 84,
+        valuation: 55,
+        trend: 69,
+        capital: 61,
+        mcap: '约2500亿',
+        pe: '亏损收窄',
+        revenue: '+73%',
+        margin: '84.6%',
+        roe: '-',
+        logic: '全球商业化能力已被验证，是中国创新药出海的标杆型公司。',
+      },
+      {
+        code: '300760.SZ',
+        name: '迈瑞医疗',
+        role: '高端器械',
+        price: 287.54,
+        change: '+0.48%',
+        core: 75,
+        proof: 80,
+        valuation: 72,
+        trend: 58,
+        capital: 52,
+        mcap: '约3500亿',
+        pe: '30x',
+        revenue: '+15%',
+        margin: '66.8%',
+        roe: '29.2%',
+        logic: '器械国产替代和海外扩张更偏稳健成长，弹性弱于创新药但质量较高。',
+      },
+    ],
+  },
+  {
+    id: 'ev',
+    name: '智能电动车',
+    score: 72,
+    heat: 69,
+    fund: '+12.7亿',
+    trend: '分化修复',
+    verify: '销量与毛利验证',
+    color: '#f59e0b',
+    chain: ['新能源渗透', '电池成本', '智能驾驶', '热管理/线控', '整车竞争'],
+    catalysts: ['智能驾驶下沉', '电池技术迭代', '出海销量增长'],
+    risks: ['价格战', '库存周期', '整车利润承压'],
+    stocks: [
+      {
+        code: '300750.SZ',
+        name: '宁德时代',
+        role: '动力电池',
+        price: 218.49,
+        change: '+1.05%',
+        core: 84,
+        proof: 82,
+        valuation: 74,
+        trend: 63,
+        capital: 60,
+        mcap: '约11000亿',
+        pe: '24x',
+        revenue: '+9%',
+        margin: '24.8%',
+        roe: '20.1%',
+        logic: '全球动力电池龙头，受益电动化和储能，但行业价格竞争压制弹性。',
+      },
+      {
+        code: '002920.SZ',
+        name: '德赛西威',
+        role: '智能座舱/智驾',
+        price: 112.8,
+        change: '+2.25%',
+        core: 78,
+        proof: 76,
+        valuation: 65,
+        trend: 72,
+        capital: 66,
+        mcap: '约700亿',
+        pe: '37x',
+        revenue: '+31%',
+        margin: '21.3%',
+        roe: '18.6%',
+        logic: '智能座舱和域控制器持续渗透，受益汽车智能化升级。',
+      },
+      {
+        code: '002050.SZ',
+        name: '三花智控',
+        role: '热管理',
+        price: 27.46,
+        change: '+0.76%',
+        core: 73,
+        proof: 75,
+        valuation: 73,
+        trend: 57,
+        capital: 51,
+        mcap: '约700亿',
+        pe: '28x',
+        revenue: '+19%',
+        margin: '28.6%',
+        roe: '17.1%',
+        logic: '热管理单车价值量提升，属于电动车供应链中确定性较强的稳健环节。',
+      },
+    ],
+  },
+];
+
+const tabs = [
+  { id: 'overview', label: '市场总览' },
+  { id: 'research', label: '产业链研究' },
+  { id: 'stock', label: '个股深度' },
+  { id: 'compare', label: '对比筛选' },
+  { id: 'plan', label: '交易计划' },
+];
+
+function allStocks() {
+  return sectors.flatMap((sector) =>
+    sector.stocks.map((stock) => ({ ...stock, sectorId: sector.id, sectorName: sector.name, sectorColor: sector.color }))
   );
 }
+
+function getCompositeScore(stock) {
+  return Math.round(stock.core * 0.28 + stock.proof * 0.24 + stock.trend * 0.2 + stock.capital * 0.16 + stock.valuation * 0.12);
+}
+
+function buildIntraday(seed, basePrice) {
+  let value = basePrice * 0.992;
+  return Array.from({ length: 72 }, (_, index) => {
+    const drift = Math.sin((index + seed) / 7) * 0.22 + Math.cos((index + seed) / 13) * 0.16 + (index > 42 ? 0.08 : -0.02);
+    value = Math.max(basePrice * 0.955, value + drift);
+    return {
+      time: index < 36 ? `09:${String(30 + index * 3).padStart(2, '0')}` : `13:${String((index - 36) * 3).padStart(2, '0')}`,
+      price: Number(value.toFixed(2)),
+      volume: Math.round(800 + Math.abs(Math.sin(index / 3 + seed)) * 2600 + index * 18),
+    };
+  });
+}
+
+function buildKline(seed, basePrice) {
+  let close = basePrice * 0.82;
+  return Array.from({ length: 46 }, (_, index) => {
+    const open = close + Math.sin((index + seed) / 3) * 1.2;
+    close = open + Math.sin((index + seed) / 4) * 1.8 + 0.34;
+    const high = Math.max(open, close) + 1.6 + Math.abs(Math.cos(index + seed));
+    const low = Math.min(open, close) - 1.5 - Math.abs(Math.sin(index + seed));
+    return {
+      open: Number(open.toFixed(2)),
+      close: Number(close.toFixed(2)),
+      high: Number(high.toFixed(2)),
+      low: Number(low.toFixed(2)),
+      volume: Math.round(1200 + Math.abs(Math.cos(index / 4 + seed)) * 4200),
+    };
+  });
+}
+
+function MiniBar({ value, color = '#38bdf8' }) {
+  return (
+    <div className="mini-bar">
+      <span style={{ width: `${Math.max(3, Math.min(100, value))}%`, background: color }} />
+    </div>
+  );
+}
+
+function IntradayChart({ data, color }) {
+  const width = 620;
+  const height = 238;
+  const pad = 26;
+  const prices = data.map((d) => d.price);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+  const points = data.map((d, index) => {
+    const x = pad + (index / (data.length - 1)) * (width - pad * 2);
+    const y = pad + ((max - d.price) / range) * (height - pad * 2 - 38);
+    return `${x},${y}`;
+  });
+  const last = data[data.length - 1];
+
+  return (
+    <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="分时图">
+      {[0, 1, 2, 3].map((line) => (
+        <line key={line} x1={pad} x2={width - pad} y1={pad + line * 42} y2={pad + line * 42} className="grid-line" />
+      ))}
+      <polyline points={points.join(' ')} fill="none" stroke={color} strokeWidth="2.6" />
+      <polygon points={`${pad},${height - 54} ${points.join(' ')} ${width - pad},${height - 54}`} fill={color} opacity="0.1" />
+      {data.map((d, index) => {
+        if (index % 4 !== 0) return null;
+        const x = pad + (index / (data.length - 1)) * (width - pad * 2);
+        const barHeight = Math.min(34, d.volume / 120);
+        return <rect key={d.time} x={x - 2} y={height - 24 - barHeight} width="3" height={barHeight} fill="#475569" opacity="0.65" />;
+      })}
+      <text x={pad} y={18} className="chart-label">
+        分时 {last.price}
+      </text>
+      <text x={width - pad - 92} y={18} className="chart-label">
+        量能模拟
+      </text>
+    </svg>
+  );
+}
+
+function KLineChart({ data }) {
+  const width = 620;
+  const height = 238;
+  const pad = 26;
+  const highs = data.map((d) => d.high);
+  const lows = data.map((d) => d.low);
+  const max = Math.max(...highs);
+  const min = Math.min(...lows);
+  const range = max - min || 1;
+  const candleWidth = (width - pad * 2) / data.length * 0.56;
+  const y = (price) => pad + ((max - price) / range) * (height - pad * 2 - 34);
+
+  return (
+    <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="K线图">
+      {[0, 1, 2, 3].map((line) => (
+        <line key={line} x1={pad} x2={width - pad} y1={pad + line * 42} y2={pad + line * 42} className="grid-line" />
+      ))}
+      {data.map((d, index) => {
+        const x = pad + (index / (data.length - 1)) * (width - pad * 2);
+        const up = d.close >= d.open;
+        const top = y(Math.max(d.open, d.close));
+        const bottom = y(Math.min(d.open, d.close));
+        return (
+          <g key={index}>
+            <line x1={x} x2={x} y1={y(d.high)} y2={y(d.low)} stroke={up ? '#ef4444' : '#22c55e'} strokeWidth="1.2" />
+            <rect
+              x={x - candleWidth / 2}
+              y={top}
+              width={candleWidth}
+              height={Math.max(2, bottom - top)}
+              fill={up ? '#ef4444' : '#22c55e'}
+              opacity="0.92"
+            />
+          </g>
+        );
+      })}
+      <text x={pad} y={18} className="chart-label">
+        日K模拟
+      </text>
+      <text x={width - pad - 118} y={18} className="chart-label">
+        趋势与量价结构
+      </text>
+    </svg>
+  );
+}
+
+function ScoreBadge({ score }) {
+  const label = score >= 85 ? '核心龙头' : score >= 75 ? '重点跟踪' : score >= 65 ? '观察标的' : '谨慎';
+  return <span className={`score-badge ${score >= 85 ? 'hot' : score >= 75 ? 'warm' : ''}`}>{score} · {label}</span>;
+}
+
+export default function App() {
+  const stocks = useMemo(() => allStocks(), []);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedSectorId, setSelectedSectorId] = useState('ai');
+  const [selectedStockCode, setSelectedStockCode] = useState('300308.SZ');
+  const [compareCodes, setCompareCodes] = useState(['300308.SZ', '002371.SZ', '601689.SH']);
+  const [search, setSearch] = useState('');
+  const [plan, setPlan] = useState({ capital: 200000, riskPct: 1, entry: 50, stop: 47.5, target: 58 });
+
+  const selectedSector = sectors.find((sector) => sector.id === selectedSectorId) || sectors[0];
+  const selectedStock = stocks.find((stock) => stock.code === selectedStockCode) || stocks[0];
+  const filteredStocks = stocks.filter((stock) => `${stock.name}${stock.code}${stock.role}${stock.sectorName}`.toLowerCase().includes(search.toLowerCase()));
+  const intraday = useMemo(() => buildIntraday(selectedStock.code.charCodeAt(0), selectedStock.price), [selectedStock]);
+  const kline = useMemo(() => buildKline(selectedStock.code.charCodeAt(1), selectedStock.price), [selectedStock]);
+  const compareStocks = compareCodes.map((code) => stocks.find((stock) => stock.code === code)).filter(Boolean);
+  const riskAmount = plan.capital * plan.riskPct / 100;
+  const singleRisk = Math.max(0, plan.entry - plan.stop);
+  const shares = singleRisk > 0 ? Math.floor(riskAmount / singleRisk / 100) * 100 : 0;
+  const position = shares * plan.entry;
+  const rewardRisk = singleRisk > 0 ? ((plan.target - plan.entry) / singleRisk).toFixed(2) : '0.00';
+
+  const selectStock = (stock) => {
+    setSelectedStockCode(stock.code);
+    setSelectedSectorId(stock.sectorId);
+    setActiveTab('stock');
+  };
+
+  const toggleCompare = (code) => {
+    setCompareCodes((current) => {
+      if (current.includes(code)) return current.filter((item) => item !== code);
+      return [...current, code].slice(-3);
+    });
+  };
+
+  return (
+    <div className="terminal">
+      <style>{styles}</style>
+      <header className="topbar">
+        <div>
+          <div className="eyebrow">A股产业链趋势研究终端</div>
+          <h1>核心受益决策工作台</h1>
+        </div>
+        <nav className="tabs">
+          {tabs.map((tab) => (
+            <button key={tab.id} className={activeTab === tab.id ? 'active' : ''} onClick={() => setActiveTab(tab.id)}>
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <main>
+        {activeTab === 'overview' && (
+          <>
+            <section className="market-strip">
+              {marketSnapshot.map((item) => (
+                <button key={item.name} className="market-card">
+                  <span>{item.name}</span>
+                  <strong>{item.value}</strong>
+                  <em>{item.change}</em>
+                  <small>{item.turnover} · {item.state}</small>
+                </button>
+              ))}
+            </section>
+
+            <section className="grid overview-grid">
+              <div className="panel wide">
+                <div className="panel-head">
+                  <h2>主线强度排行</h2>
+                  <span>按资金、趋势、验证、核心环节综合排序</span>
+                </div>
+                <div className="sector-rank">
+                  {[...sectors].sort((a, b) => b.score - a.score).map((sector) => (
+                    <button
+                      key={sector.id}
+                      className={`rank-row ${selectedSectorId === sector.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedSectorId(sector.id);
+                        setActiveTab('research');
+                      }}
+                    >
+                      <strong>{sector.name}</strong>
+                      <MiniBar value={sector.score} color={sector.color} />
+                      <span>{sector.score}</span>
+                      <small>{sector.fund} · {sector.trend}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-head">
+                  <h2>市场情绪</h2>
+                  <span>演示模型</span>
+                </div>
+                <div className="gauge">
+                  <strong>76</strong>
+                  <span>修复转强</span>
+                </div>
+                <div className="stat-list">
+                  <p><b>涨停</b><span>78</span></p>
+                  <p><b>跌停</b><span>6</span></p>
+                  <p><b>连板高度</b><span>5板</span></p>
+                  <p><b>全市场成交</b><span>10,620亿</span></p>
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-head">
+                  <h2>产业链热力图</h2>
+                  <span>点击切换研究对象</span>
+                </div>
+                <div className="heatmap">
+                  {sectors.map((sector) => (
+                    <button
+                      key={sector.id}
+                      style={{ background: `linear-gradient(135deg, ${sector.color}55, #111827)` }}
+                      onClick={() => setSelectedSectorId(sector.id)}
+                    >
+                      <strong>{sector.name}</strong>
+                      <span>{sector.heat}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="panel wide">
+                <div className="panel-head">
+                  <h2>核心候选池</h2>
+                  <span>机构视角先看验证，再看价格</span>
+                </div>
+                <StockTable stocks={stocks.slice().sort((a, b) => getCompositeScore(b) - getCompositeScore(a)).slice(0, 9)} onSelect={selectStock} onCompare={toggleCompare} compareCodes={compareCodes} />
+              </div>
+            </section>
+          </>
+        )}
+
+        {activeTab === 'research' && (
+          <section className="grid research-grid">
+            <div className="panel">
+              <div className="panel-head">
+                <h2>板块列表</h2>
+                <span>趋势强度</span>
+              </div>
+              <div className="sector-list">
+                {sectors.map((sector) => (
+                  <button key={sector.id} className={selectedSectorId === sector.id ? 'active' : ''} onClick={() => setSelectedSectorId(sector.id)}>
+                    <strong>{sector.name}</strong>
+                    <span>{sector.verify}</span>
+                    <MiniBar value={sector.score} color={sector.color} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="panel span-2">
+              <div className="panel-head">
+                <h2>{selectedSector.name}产业链拆解</h2>
+                <span>{selectedSector.trend} · {selectedSector.fund}</span>
+              </div>
+              <div className="chain-flow">
+                {selectedSector.chain.map((node, index) => (
+                  <React.Fragment key={node}>
+                    <div className={index >= 2 ? 'core-node' : ''}>
+                      <small>{index + 1}</small>
+                      <strong>{node}</strong>
+                    </div>
+                    {index < selectedSector.chain.length - 1 && <span className="connector">→</span>}
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="research-notes">
+                <div>
+                  <h3>催化</h3>
+                  {selectedSector.catalysts.map((item) => <p key={item}>{item}</p>)}
+                </div>
+                <div>
+                  <h3>风险</h3>
+                  {selectedSector.risks.map((item) => <p key={item}>{item}</p>)}
+                </div>
+                <div>
+                  <h3>机构判断</h3>
+                  <p>优先确认核心环节是否出现订单、价格、毛利率或产能利用率改善。</p>
+                  <p>若龙头强于板块平均，说明资金认可主线；若只有边缘标的活跃，要降低权重。</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="panel span-3">
+              <div className="panel-head">
+                <h2>{selectedSector.name}核心公司</h2>
+                <span>点击进入个股深度</span>
+              </div>
+              <StockTable stocks={selectedSector.stocks.map((stock) => ({ ...stock, sectorId: selectedSector.id, sectorName: selectedSector.name, sectorColor: selectedSector.color }))} onSelect={selectStock} onCompare={toggleCompare} compareCodes={compareCodes} />
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'stock' && (
+          <section className="grid stock-grid">
+            <div className="panel span-2">
+              <div className="panel-head">
+                <h2>{selectedStock.name} · {selectedStock.code}</h2>
+                <span>{selectedStock.sectorName} · {selectedStock.role}</span>
+              </div>
+              <div className="quote-line">
+                <strong>{selectedStock.price.toFixed(2)}</strong>
+                <span>{selectedStock.change}</span>
+                <ScoreBadge score={getCompositeScore(selectedStock)} />
+              </div>
+              <div className="chart-grid">
+                <IntradayChart data={intraday} color={selectedStock.sectorColor} />
+                <KLineChart data={kline} />
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="panel-head">
+                <h2>机构评分</h2>
+                <span>五维模型</span>
+              </div>
+              {[
+                ['核心受益', selectedStock.core],
+                ['业绩验证', selectedStock.proof],
+                ['估值安全', selectedStock.valuation],
+                ['趋势强度', selectedStock.trend],
+                ['资金关注', selectedStock.capital],
+              ].map(([label, value]) => (
+                <div className="factor" key={label}>
+                  <span>{label}</span>
+                  <MiniBar value={value} color={selectedStock.sectorColor} />
+                  <b>{value}</b>
+                </div>
+              ))}
+            </div>
+
+            <div className="panel">
+              <div className="panel-head">
+                <h2>核心逻辑</h2>
+                <span>产业链位置</span>
+              </div>
+              <p className="logic-text">{selectedStock.logic}</p>
+              <div className="data-grid">
+                <div><span>市值</span><strong>{selectedStock.mcap}</strong></div>
+                <div><span>PE</span><strong>{selectedStock.pe}</strong></div>
+                <div><span>营收增速</span><strong>{selectedStock.revenue}</strong></div>
+                <div><span>毛利率</span><strong>{selectedStock.margin}</strong></div>
+                <div><span>ROE</span><strong>{selectedStock.roe}</strong></div>
+                <div><span>板块</span><strong>{selectedStock.sectorName}</strong></div>
+              </div>
+            </div>
+
+            <div className="panel span-2">
+              <div className="panel-head">
+                <h2>验证清单</h2>
+                <span>决定是否继续跟踪</span>
+              </div>
+              <div className="check-grid">
+                <label><input type="checkbox" /> 核心环节出现订单、涨价、扩产或客户认证</label>
+                <label><input type="checkbox" /> 龙头走势强于同板块平均水平</label>
+                <label><input type="checkbox" /> 财报数据能验证产业链逻辑</label>
+                <label><input type="checkbox" /> 估值和拥挤度尚未明显透支</label>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'compare' && (
+          <section className="grid compare-grid">
+            <div className="panel span-3">
+              <div className="panel-head">
+                <h2>三股横向对比</h2>
+                <span>核心、业绩、估值、趋势、资金</span>
+              </div>
+              <div className="compare-cards">
+                {compareStocks.map((stock) => (
+                  <div className="compare-card" key={stock.code}>
+                    <button onClick={() => toggleCompare(stock.code)}>移除</button>
+                    <h3>{stock.name}</h3>
+                    <p>{stock.sectorName} · {stock.role}</p>
+                    <ScoreBadge score={getCompositeScore(stock)} />
+                    <div className="factor compact"><span>核心</span><MiniBar value={stock.core} color={stock.sectorColor} /><b>{stock.core}</b></div>
+                    <div className="factor compact"><span>验证</span><MiniBar value={stock.proof} color={stock.sectorColor} /><b>{stock.proof}</b></div>
+                    <div className="factor compact"><span>趋势</span><MiniBar value={stock.trend} color={stock.sectorColor} /><b>{stock.trend}</b></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="panel span-3">
+              <div className="panel-head">
+                <h2>全市场候选筛选</h2>
+                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索公司、代码、板块、产业环节" />
+              </div>
+              <StockTable stocks={filteredStocks} onSelect={selectStock} onCompare={toggleCompare} compareCodes={compareCodes} />
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'plan' && (
+          <section className="grid plan-grid">
+            <div className="panel">
+              <div className="panel-head">
+                <h2>仓位与止损</h2>
+                <span>先定义亏损边界</span>
+              </div>
+              <div className="form-grid">
+                {[
+                  ['capital', '账户资金'],
+                  ['riskPct', '单笔风险%'],
+                  ['entry', '计划买入价'],
+                  ['stop', '止损价'],
+                  ['target', '目标价'],
+                ].map(([key, label]) => (
+                  <label key={key}>
+                    {label}
+                    <input
+                      type="number"
+                      value={plan[key]}
+                      onChange={(event) => setPlan((current) => ({ ...current, [key]: Number(event.target.value) }))}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="panel-head">
+                <h2>交易结果</h2>
+                <span>按计划价测算</span>
+              </div>
+              <div className="result-grid">
+                <div><span>最大亏损</span><strong>{riskAmount.toFixed(0)}</strong></div>
+                <div><span>建议股数</span><strong>{shares}</strong></div>
+                <div><span>占用仓位</span><strong>{plan.capital ? (position / plan.capital * 100).toFixed(1) : '0.0'}%</strong></div>
+                <div><span>盈亏比</span><strong>{rewardRisk}</strong></div>
+              </div>
+              <p className="logic-text">纪律建议：盈亏比低于 2 时，不急于交易；核心分不足 75 时，只保留观察，不进入计划。</p>
+            </div>
+
+            <div className="panel span-3">
+              <div className="panel-head">
+                <h2>交易计划模板</h2>
+                <span>复盘时填写</span>
+              </div>
+              <div className="journal">
+                <textarea placeholder="买入理由：核心受益环节、验证信号、资金行为、价格位置" />
+                <textarea placeholder="失效条件：订单不及预期、板块龙头走弱、放量破位、估值透支" />
+                <textarea placeholder="复盘记录：是否按计划执行，错误来自逻辑、价格还是情绪" />
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer>
+        演示数据仅用于页面与研究框架展示，不构成投资建议。真实使用时建议接入行情、财报、公告、研报和资金流接口。
+      </footer>
+    </div>
+  );
+}
+
+function StockTable({ stocks, onSelect, onCompare, compareCodes }) {
+  return (
+    <div className="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>公司</th>
+            <th>产业链位置</th>
+            <th>价格</th>
+            <th>核心分</th>
+            <th>验证</th>
+            <th>趋势</th>
+            <th>综合</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stocks.map((stock) => (
+            <tr key={stock.code}>
+              <td onClick={() => onSelect(stock)}>
+                <strong>{stock.name}</strong>
+                <span>{stock.code}</span>
+              </td>
+              <td>{stock.sectorName || ''} · {stock.role}</td>
+              <td>
+                <strong>{stock.price.toFixed(2)}</strong>
+                <span className="red">{stock.change}</span>
+              </td>
+              <td>{stock.core}</td>
+              <td>{stock.proof}</td>
+              <td>{stock.trend}</td>
+              <td><ScoreBadge score={getCompositeScore(stock)} /></td>
+              <td>
+                <button className="text-btn" onClick={() => onSelect(stock)}>深度</button>
+                <button className={`text-btn ${compareCodes.includes(stock.code) ? 'on' : ''}`} onClick={() => onCompare(stock.code)}>
+                  {compareCodes.includes(stock.code) ? '已对比' : '对比'}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const styles = `
+* { box-sizing: border-box; }
+body { margin: 0; background: #080b12; }
+button, input, textarea { font: inherit; }
+.terminal {
+  min-height: 100vh;
+  background: #080b12;
+  color: #e5edf6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 22px;
+  border-bottom: 1px solid #202939;
+  background: rgba(8, 11, 18, 0.94);
+  backdrop-filter: blur(16px);
+}
+.eyebrow { color: #7dd3fc; font-size: 12px; margin-bottom: 4px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: 24px; letter-spacing: 0; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tabs button, .text-btn, .market-card, .rank-row, .sector-list button, .heatmap button {
+  border: 1px solid #263244;
+  background: #111827;
+  color: #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.tabs button { padding: 9px 13px; }
+.tabs button.active, .text-btn.on { border-color: #38bdf8; color: #e0f2fe; background: rgba(56, 189, 248, 0.12); }
+main { padding: 18px 22px 30px; }
+.market-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.market-card { text-align: left; padding: 14px; min-height: 104px; }
+.market-card span, .market-card small, .panel-head span, table span, .result-grid span, .data-grid span { display: block; color: #94a3b8; font-size: 12px; }
+.market-card strong { display: block; font-size: 22px; margin: 7px 0 2px; }
+.market-card em, .red { color: #ef4444; font-style: normal; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.overview-grid { grid-template-columns: 1.2fr 0.8fr 1fr; }
+.research-grid { grid-template-columns: 300px 1fr 1fr; }
+.stock-grid { grid-template-columns: 1fr 1fr 360px; }
+.compare-grid, .plan-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.panel {
+  min-width: 0;
+  background: #111827;
+  border: 1px solid #202939;
+  border-radius: 8px;
+  padding: 16px;
+}
+.wide { grid-column: span 2; }
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.panel-head h2 { font-size: 16px; }
+.panel-head input {
+  width: min(360px, 100%);
+  background: #0b1220;
+  border: 1px solid #263244;
+  color: #e5edf6;
+  border-radius: 8px;
+  padding: 9px 11px;
+}
+.sector-rank, .sector-list, .stat-list { display: grid; gap: 10px; }
+.rank-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 44px 150px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  text-align: left;
+}
+.rank-row.selected, .sector-list button.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.08); }
+.mini-bar { height: 8px; background: #0b1220; border-radius: 999px; overflow: hidden; }
+.mini-bar span { display: block; height: 100%; border-radius: 999px; }
+.gauge {
+  min-height: 170px;
+  border: 1px solid #263244;
+  border-radius: 8px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.22), rgba(17, 24, 39, 0.4) 56%);
+}
+.gauge strong { font-size: 54px; line-height: 1; }
+.gauge span { color: #bae6fd; }
+.stat-list p { display: flex; justify-content: space-between; border-bottom: 1px solid #202939; padding: 9px 0; color: #cbd5e1; }
+.stat-list b { font-weight: 500; color: #94a3b8; }
+.heatmap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.heatmap button { min-height: 86px; padding: 12px; text-align: left; }
+.heatmap strong, .heatmap span { display: block; }
+.heatmap span { font-size: 26px; margin-top: 8px; color: #fff; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; min-width: 860px; border-collapse: collapse; }
+th, td { border-bottom: 1px solid #202939; padding: 11px 9px; text-align: left; font-size: 13px; }
+th { color: #94a3b8; font-weight: 500; }
+td:first-child { cursor: pointer; }
+td strong { display: block; }
+.text-btn { padding: 6px 9px; margin-right: 6px; }
+.score-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: #1f2937;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+.score-badge.warm { background: rgba(245, 158, 11, 0.16); color: #fcd34d; }
+.score-badge.hot { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+.sector-list button {
+  padding: 12px;
+  text-align: left;
+}
+.sector-list strong, .sector-list span { display: block; margin-bottom: 7px; }
+.sector-list span { color: #94a3b8; font-size: 12px; }
+.chain-flow { display: flex; align-items: stretch; gap: 8px; overflow-x: auto; padding-bottom: 10px; }
+.chain-flow div {
+  min-width: 138px;
+  border: 1px solid #263244;
+  border-radius: 8px;
+  padding: 12px;
+  background: #0b1220;
+}
+.chain-flow .core-node { border-color: rgba(245, 158, 11, 0.65); background: rgba(245, 158, 11, 0.1); }
+.chain-flow small { color: #94a3b8; display: block; margin-bottom: 7px; }
+.connector { color: #64748b; align-self: center; }
+.research-notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.research-notes div, .compare-card, .result-grid div, .data-grid div {
+  border: 1px solid #263244;
+  border-radius: 8px;
+  background: #0b1220;
+  padding: 12px;
+}
+.research-notes h3 { font-size: 14px; margin-bottom: 8px; }
+.research-notes p, .logic-text { color: #cbd5e1; line-height: 1.7; font-size: 13px; }
+.quote-line { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.quote-line > strong { font-size: 34px; }
+.quote-line > span { color: #ef4444; }
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.chart { width: 100%; min-height: 220px; background: #0b1220; border: 1px solid #263244; border-radius: 8px; }
+.grid-line { stroke: #202939; stroke-width: 1; }
+.chart-label { fill: #94a3b8; font-size: 12px; }
+.factor { display: grid; grid-template-columns: 76px 1fr 34px; gap: 9px; align-items: center; margin-bottom: 12px; color: #cbd5e1; font-size: 13px; }
+.factor.compact { grid-template-columns: 48px 1fr 30px; margin-top: 12px; }
+.data-grid, .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.data-grid strong, .result-grid strong { display: block; margin-top: 5px; }
+.check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.check-grid label { border: 1px solid #263244; border-radius: 8px; padding: 12px; color: #cbd5e1; background: #0b1220; }
+.check-grid input { accent-color: #38bdf8; margin-right: 8px; }
+.compare-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.compare-card button { float: right; border: 1px solid #263244; background: transparent; color: #94a3b8; border-radius: 6px; cursor: pointer; }
+.compare-card h3 { margin: 2px 0 4px; }
+.compare-card p { color: #94a3b8; margin-bottom: 10px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.form-grid label { color: #94a3b8; font-size: 12px; }
+.form-grid input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  background: #0b1220;
+  border: 1px solid #263244;
+  color: #e5edf6;
+  border-radius: 8px;
+  padding: 10px;
+}
+.journal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.journal textarea {
+  min-height: 160px;
+  resize: vertical;
+  background: #0b1220;
+  border: 1px solid #263244;
+  color: #e5edf6;
+  border-radius: 8px;
+  padding: 12px;
+}
+footer { color: #64748b; font-size: 12px; text-align: center; padding: 20px; border-top: 1px solid #202939; }
+@media (max-width: 1100px) {
+  .topbar { align-items: flex-start; flex-direction: column; }
+  .market-strip, .grid, .overview-grid, .research-grid, .stock-grid, .compare-grid, .plan-grid { grid-template-columns: 1fr; }
+  .wide, .span-2, .span-3 { grid-column: auto; }
+  .chart-grid, .research-notes, .compare-cards, .journal { grid-template-columns: 1fr; }
+  .rank-row { grid-template-columns: 120px 1fr 40px; }
+  .rank-row small { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  main { padding: 12px; }
+  .topbar { padding: 14px; }
+  .market-strip, .data-grid, .result-grid, .check-grid, .form-grid, .heatmap { grid-template-columns: 1fr; }
+  h1 { font-size: 20px; }
+}
+`;
