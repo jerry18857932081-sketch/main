@@ -1,0 +1,37 @@
+[
+    {
+        "stock_name":"绿的谐波",
+        "sector":"人形机器人(减速器)",
+        "current_price":115.2,
+        "change_pct":6.8,
+        "action":"🔥🔥 核心重仓"
+    },
+    {
+        "stock_name":"中际旭创",
+        "sector":"AI算力(光模块)",
+        "current_price":168.5,
+        "change_pct":4.5,
+        "action":"🔥🔥 核心重仓"
+    },
+    {
+        "stock_name":"双环传动",
+        "sector":"人形机器人(齿轮)",
+        "current_price":26.8,
+        "change_pct":2.1,
+        "action":"🔥🔥 核心重仓"
+    },
+    {
+        "stock_name":"璞泰来",
+        "sector":"固态电池(负极)",
+        "current_price":36.6,
+        "change_pct":0.5,
+        "action":"❄️ 暂不介入"
+    },
+    {
+        "stock_name":"工业富联",
+        "sector":"AI算力(代工)",
+        "current_price":23.1,
+        "change_pct":-1.2,
+        "action":"⚠️ 谨慎观察"
+    }
+]
