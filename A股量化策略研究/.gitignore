@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+data/platform.db
+*.db
+.env
+platform.db
